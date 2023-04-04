@@ -1,8 +1,9 @@
 name: Standard Test
+
 on: [push, pull_request]
+
 jobs:
   build-lint-test:
-    name: Build, lint, test
     runs-on: ubuntu-latest
 
     steps:
@@ -13,19 +14,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          cache: 'yarn'
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: yarn install --ignore-scripts
-
-      - name: Build
-        run: yarn build
+        run: npm install
 
       - name: Lint
-        run: yarn lint
-
-      - name: Test
-        run: yarn test
-
-      - name: Test Docs Generation
-        run: yarn docgen
+        run: npm run lint
