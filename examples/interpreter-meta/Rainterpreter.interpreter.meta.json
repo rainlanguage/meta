@@ -1,0 +1,39 @@
+{
+  "name": "Rainterpreter",
+  "commit": "2f255a2",
+  "addresses": [
+    {
+      "chainId": 80001,
+      "knownAddresses": [
+        {
+          "deployer": "0x6a199e376d0dc789e87e5f9ed6d303b63b259c91",
+          "integrity": "",
+          "interpreter": "0x74b2463005b2cd9f0f6f3ffe25aa8f965f780bef"
+        }
+      ]
+    }
+  ],
+  "description": "",
+  "author": "",
+  "opmeta": [],
+  "path": "",
+  "storageLength": 0,
+  "version": {
+    "major": 0,
+    "minor": 0,
+    "release": ""
+  },
+  "wordpack": {
+    "author": "",
+    "commit": "",
+    "description": "",
+    "name": "",
+    "path": "",
+    "version": {
+      "major": 0,
+      "minor": 0,
+      "release": ""
+    },
+    "words": []
+  }
+}

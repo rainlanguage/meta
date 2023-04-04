@@ -1,0 +1,16 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["*.op.meta.json"],
+      "url": "./schemas/op.meta.schema.json"
+    },
+    {
+      "fileMatch": ["*.contract.meta.json"],
+      "url": "./schemas/contract.meta.schema.json"
+    },
+    {
+      "fileMatch": ["*.interpreter.meta.json"],
+      "url": "./schemas/interpreter.meta.schema.json"
+    }
+  ]
+}
