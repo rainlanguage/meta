@@ -6,7 +6,7 @@ import { InterpreterMetadata } from "./interpreter";
  * @description Schema for an expression
  * @version 0.01
  */
- export type ExpressionMetadata = {
+export type ExpressionMetadata = {
     name: string
     commit: string
     description: string

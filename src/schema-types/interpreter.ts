@@ -1,5 +1,5 @@
-import { Version } from "./general"
-import { Word, WordPackMetadata } from "./wordpack"
+import { Version } from "./general";
+import { Word, WordPackMetadata } from "./wordpack";
 
 /**
  * @title Rain Interpreter Metadata

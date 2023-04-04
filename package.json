@@ -6,8 +6,8 @@
   "license": "CAL-1.0",
   "main": "index.ts",
   "scripts": {
-    "lint": "eslint \"src/**\" \"test/**\"",
-    "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
+    "lint": "eslint \"src/**\"",
+    "lint-fix": "eslint \"src/**\" --fix",
     "test": "echo \"there is no test at the moment!\""
   },
   "repository": {
