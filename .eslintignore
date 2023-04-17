@@ -9,3 +9,4 @@ tsconfig.*.json
 LICENSE
 schemas
 examples
+*.json
