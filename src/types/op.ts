@@ -1,3 +1,6 @@
+// specify the version of the meta in the following line
+// version 0.0.0
+
 /**
  * @title Opcode Metadata
  * @description Schema for opcodes metadata used by RainLang.
@@ -36,10 +39,14 @@ export type OpMeta = {
     aliases?: StringArray[];
 }
 
-// Data type of opcode's inputs that determines the number of  
-// inputs an opcode has and provide information about them
-export type InputMeta = 0 | InputArgs
+/** 
+ * @public Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them
+ */
+export type InputMeta = Zero | InputArgs
 
+/**
+ * @public Data type for input argguments
+ */
 export type InputArgs = {
     /**
      * @title Parameters
@@ -80,10 +87,14 @@ export type InputArgs = {
     computation?: string;
 }
 
-// Data type of opcode's outputs that determines the number of  
-// outputs an opcode has and provide information about them
+/** 
+ * @public Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them
+ */
 export type OutputMeta = Integer | ComputedOutput
 
+/**
+ * @public Data type for computed output
+ */
 export type ComputedOutput = {
     /**
      * @title Outputs-Allocated Operand Bits
@@ -99,10 +110,13 @@ export type ComputedOutput = {
     computation?: string;
 }
 
-// Data type of operand arguments, used only for non-constant operands
-export type OperandMeta = 0 | OperandArgs 
+/** 
+ * @public Data type of operand arguments, used only for non-constant operands
+ */
+export type OperandMeta = Zero | OperandArgs 
 
 /**
+ * @public Data type for computed operand that consists of some arguments
  * @minItems 1
  */
 export type OperandArgs = {
@@ -137,18 +151,27 @@ export type OperandArgs = {
     validRange?: ([LengthInteger] | [LengthInteger, LengthInteger])[];
 }[]
 
+
 /**
+ * @asType integer
+ */
+type Zero = 0
+
+/**
+ * @asType integer
  * @minimum 0
  */
 type Integer = number
 
 /**
+ * @asType integer
  * @minimum 0
  * @maximum 15
  */
 type BitInteger = number
 
 /**
+ * @asType integer
  * @minimum 0
  * @maximum 65535
  */

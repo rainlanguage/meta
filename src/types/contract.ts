@@ -1,12 +1,20 @@
+// specify the version of the meta in the following line
+// version 0.0.0
+
 /**
  * @title Rain Contract Metadata
  * @description Required info about a contract that receives expression in at least one of its methods.
  */
-export type ContractMetadata = {
+export type ContractMeta = {
     /**
      * @title Contract Name
      */
     name: string;
+    /**
+     * @title Contract ABI name
+     * @description Name of the contract corresponding to `contractName` feild in the abi.
+     */
+    abiName: string;
     /**
      * @title Contract Description
      * @description A brief description about the contract.
@@ -31,11 +39,19 @@ export type ContractMetadata = {
     methods: Method[]
 }
 
+/**
+ * @public Methods of the contract that receive at least one expression (EvaluableConfig) from arguments.
+ */
 export type Method = {
     /**
      * @title Method Name
      */
     name: string;
+    /**
+     * @title Method ABI name
+     * @description Name of the method corresponding to `name` feild in the abi.
+     */
+    abiName: string;
     /**
      * @title Method Description
      */
@@ -52,12 +68,19 @@ export type Method = {
     expressions: Expression[];
 }
 
-// Additional information about inputs in this ABI.
+/** 
+ * @public Additional information about inputs in this ABI.
+ */
 export type Input = {
     /**
      * @title Input Name
      */
     name: string;
+    /**
+     * @title Input ABI name
+     * @description Name of the input corresponding to `name` feild in the abi.
+     */
+    abiName: string;
     /**
      * @title Input Description
      */
@@ -69,13 +92,20 @@ export type Input = {
     path: string;
 }
 
-// Additional information about expressions (EvaluableConfig) in this ABI.
-// argument type for expression (EvaluableConfig)
+/** 
+ * @public Additional information about expressions (EvaluableConfig) in this ABI. 
+ * argument type for expression (EvaluableConfig)
+ */
 export type Expression = {
     /**
      * @title Expression Name
      */
     name: string;
+    /**
+     * @title Expression ABI name
+     * @description Name of the expression corresponding to `name` feild in the abi.
+     */
+    abiName: string;
     /**
      * @title Expression Description
      */
@@ -104,8 +134,10 @@ export type Expression = {
     contextColumns?: ContextColumn[];
 }
 
-// Each column in the context, cells are optional in the case of additional
-// context passed in at time of execution (like arbitrary signed context)
+/** 
+ * @public Each column in the context, cells are optional in the case of 
+ * additional context passed in at time of execution (like arbitrary signed context)
+ */
 export type ContextColumn = {
     /**
      * @title Context Column Name
@@ -135,7 +167,9 @@ export type ContextColumn = {
     cells?: ContextCell[]
 }
 
-// One cell in the context.
+/**
+ * @public One cell in the context.
+ */
 export type ContextCell = {
     /**
      * @title Context Cell Name
@@ -159,6 +193,7 @@ export type ContextCell = {
 }
 
 /**
+ * @asType integer
  * @minimum 0
  * @maximum 255
  */

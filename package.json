@@ -1,15 +1,9 @@
 {
-  "name": "meta",
+  "name": "@rainprotocol/meta",
   "version": "0.0.0",
-  "description": "A utility library for Rain Protocol meta",
+  "description": "Utility library for Rain Protocol metadata",
   "author": "Rain Protocol",
   "license": "CAL-1.0",
-  "main": "index.ts",
-  "scripts": {
-    "lint": "eslint \"src/**\"",
-    "lint-fix": "eslint \"src/**\" --fix",
-    "test": "echo \"there is no test at the moment!\""
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rainprotocol/meta.git"
@@ -18,6 +12,31 @@
     "url": "https://github.com/rainprotocol/meta/issues"
   },
   "homepage": "https://github.com/rainprotocol/meta#readme",
+  "main": "./cjs.js",
+  "module": "./esm.js",
+  "browser": "./esm.js",
+  "files": [
+    "/src",
+    "/dist",
+    "/schemas",
+    "/cjs.js",
+    "/esm.js",
+    "/cjs.d.ts",
+    "/esm.d.ts"
+  ],
+  "scripts": {
+    "prepare": "npm run build && npm run gen-schema",
+    "build": "rimraf ./dist && npm run build-cjs && npm run build-esm && npm run build-types",
+    "build-esm": "tsc -b ./tsconfig.esm.json",
+    "build-cjs": "tsc -b ./tsconfig.json",
+    "build-types": "tsc -b ./tsconfig.types.json",
+    "lint": "eslint \"src/**\"",
+    "lint-fix": "eslint \"src/**\" --fix",
+    "test": "echo \"there are no tests at the moment!\"",
+    "op-meta-schema": "node ./scripts/genMetaSchema.js --op",
+    "contract-meta-schema": "node ./scripts/genMetaSchema.js --contract",
+    "gen-schema": "npm run op-meta-schema && npm run contract-meta-schema"
+  },
   "devDependencies": {
     "@types/node": "^18.15.11",
     "@types/pako": "^2.0.0",
@@ -26,9 +45,11 @@
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
+    "rimraf": "^5.0.0",
     "ts-json-schema-generator": "^1.2.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.3",
+    "typescript-json-schema": "^0.56.0"
   },
   "dependencies": {
     "ajv": "^8.12.0",

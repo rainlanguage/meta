@@ -3,9 +3,9 @@ import { Buffer } from "buffer/";
 import stringMath from "string-math";
 import { deflate, inflate } from "pako";
 import { decodeAllSync } from "cbor-web";
-import { format } from "prettier-standalone";
+import { format } from "prettier/standalone";
 import babelParser from "prettier/parser-babel";
-import { BigNumber, BigNumberish, utils, ethers, BytesLike } from 'ethers';
+import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
 /**
  * @public ethers constants
@@ -22,9 +22,21 @@ export const {
      */
     hexlify,
     /**
+     * @public ethers zeroPad
+     */
+    zeroPad,
+    /**
+     * @public ethers hexZeroPad
+     */
+    hexZeroPad,
+    /**
      * @public ethers arrayify
      */
     arrayify,
+    /**
+     * @public ethers parseUnits
+     */
+    parseUnits,
     /**
      * @public ethers isBytes
      */
@@ -51,14 +63,13 @@ export function isBigNumberish(value: any): boolean {
     return (
         value != null &&
         (BigNumber.isBigNumber(value) ||
-        (typeof value === 'number' && value % 1 === 0) ||
-        (typeof value === 'string' && !!value.match(/^-?[0-9]+$/)) ||
+        (typeof value === "number" && value % 1 === 0) ||
+        (typeof value === "string" && !!value.match(/^-?[0-9]+$/)) ||
         isHexString(value) ||
-        typeof value === 'bigint' ||
+        typeof value === "bigint" ||
         isBytes(value))
     );
 }
-
 
 /**
  * @public
@@ -102,7 +113,7 @@ export function extractFromRecord<T extends string | number | symbol>(
     record: Record<T, any>,
     properties: string | string[]
 ): Record<T, any> {
-    if (typeof properties === 'string') {
+    if (typeof properties === "string") {
         for (const key in record) {
             for (const value in record[key]) {
                 if (properties.includes(value)) {
@@ -183,7 +194,7 @@ export function recordToMap<K extends string | number | symbol>(
  * @returns frozen object
  */
 export function deepFreeze(object: any) {
-    if (typeof object === 'object') {
+    if (typeof object === "object") {
         // Retrieve the property names defined on object
         const propNames = Object.getOwnPropertyNames(object);
     
@@ -223,7 +234,6 @@ export function deepCopy<T>(variable: T): T {
     else _result = variable;
     return _result as T;
 }
-
 
 /**
  * @public
