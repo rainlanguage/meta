@@ -1,6 +1,6 @@
 # Rain Protocol Meta
 Utility library for Rain Protocol's metadata.
-Also provides the schemas generated from typescript types for Rain Protocol's metadata such as op meta and contract meta.
+Also provides the schemas generated from typescript types for Rain Protocol's metadata such as op meta and contract meta. (uses [ts-json-schema-generator](https://www.npmjs.com/package/ts-json-schema-generator))
 
 ## Usage
 Install the package with following: 
@@ -61,4 +61,28 @@ validateMeta(opmetaObj, OpMetaSchema);
 
 // alternatively "metaFromBytes()" can perform the validation internally if the schema is provided as second arg
 const opmetaObj = metaFromBytes(opmeta, OpMetaSchema);
+```
+<br>
+
+## Developers Guide
+Clone the repo and then install all the dependencies:
+```bash
+npm install
+```
+There is `prepare` hook that will compile and generate the schemas after installing the deps.
+Versions of the generated schemas (schema `$id` field) are specified at the beginning of their types file with the following form:
+```typescript
+// specify the version of the meta in the following line
+// version 0.0.0
+```
+Modify the digits for specifying the version for the generated schema.
+
+To generate the schemas:
+```bash
+npm run gen-schema
+```
+
+To run the tests:
+```bash
+npm test
 ```
