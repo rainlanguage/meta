@@ -8,9 +8,11 @@ const _contMetaSchema = require("./schemas/contract.meta.schema.json");
 /**
  * @public op meta schema
  */
-exports.OpMetaSchema = _opMetaSchema;
+const OpMetaSchema = _opMetaSchema;
+module.exports.OpMetaSchema = OpMetaSchema;
 
 /**
  * @public contract meta schema
  */
-exports.ContractMetaSchema = _contMetaSchema;
+const ContractMetaSchema = _contMetaSchema;
+module.exports.ContractMetaSchema = ContractMetaSchema;
