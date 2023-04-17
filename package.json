@@ -59,7 +59,7 @@
     "graphql": "^16.6.0",
     "graphql-request": "^5.2.0",
     "pako": "^2.1.0",
-    "prettier-standalone": "^1.3.1-0",
+    "prettier": "^2.8.7",
     "string-math": "^1.2.2"
   }
 }
