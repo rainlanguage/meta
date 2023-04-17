@@ -34,11 +34,8 @@
     "lint-fix": "eslint \"src/**\" --fix",
     "test": "echo \"there are no tests at the moment!\"",
     "op-meta-schema": "node ./scripts/genMetaSchema.js --op",
-    "cont-meta-schema": "node ./scripts/genMetaSchema.js --contract",
-    "exp-meta-schema": "node ./scripts/genMetaSchema.js --expression",
-    "int-meta-schema": "node ./scripts/genMetaSchema.js --interpreter",
-    "wp-meta-schema": "node ./scripts/genMetaSchema.js --wordpack",
-    "gen-schema": "npm run op-meta-schema && npm run cont-meta-schema && npm run exp-meta-schema && npm run int-meta-schema && npm run wp-meta-schema"
+    "contract-meta-schema": "node ./scripts/genMetaSchema.js --contract",
+    "gen-schema": "npm run op-meta-schema && npm run contract-meta-schema"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",

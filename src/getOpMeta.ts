@@ -4,19 +4,24 @@ import { sgBook } from "./subgraphBook";
 
 /**
  * @public Get the query content
- * @param address - Address of the deployer
+ * @param filter - Address or meta hash of the deployer
  * @returns The query content
  */
-export const getQuery = (address: string): string => {
-    if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
-        return `{ expressionDeployer(id: "${address.toLowerCase()}") { opmeta } }`;
-    } 
-    else throw new Error("invalid address");
+export const getQuery = (filter: string): string => {
+    if (filter.match(/^0x[a-fA-F0-9]{40}$/)) {
+        return `{ expressionDeployer(id: "${filter.toLowerCase()}") { opmeta } }`;
+    }
+    else if (filter.match(/^0x[a-fA-F0-9]{64}$/)) {
+        return `{ expressionDeployers(where: { meta_: { id: "${
+            filter.toLowerCase()
+        }" } } first: 1) { opmeta } }`;
+    }
+    else throw new Error("invalid address or hash");
 };
 
 /**
  * @public Get the op meta from sg
- * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event
+ * @param deployerAddress - The address of the deployer to get the op meta from its emitted DISpair event
  * @param network - (optional) The network name, defaults to mumbai if not specified
  * @returns The op meta bytes
  */
@@ -27,7 +32,7 @@ export async function getOpMetaFromSg(
 
 /**
  * @public Get the op meta from sg
- * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event
+ * @param deployerAddress - The address of the deployer to get the op meta from its emitted DISpair event
  * @param chainId - (optional) The chain id of the network where the deployer is deployed at. default is Mumbai network
  * @returns The op meta bytes
  */
@@ -38,7 +43,7 @@ export async function getOpMetaFromSg(
 
 /**
  * @public Get the op meta from sg
- * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event
+ * @param deployerAddress - The address of the deployer to get the op meta from its emitted DISpair event
  * @param sgUrl - The subgraph endpoint URL to query from
  * @returns The op meta bytes
  */
