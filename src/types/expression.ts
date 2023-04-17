@@ -1,12 +1,14 @@
+// specify the version of the meta in the following line
+// version 0.0.0
+
 import { Version } from "./general";
-import { InterpreterMetadata } from "./interpreter";
+import { InterpreterMeta } from "./interpreter";
 
 /**
  * @title Rain Exprression Metadata
- * @description Schema for an expression
- * @version 0.01
+ * @description Required data of an expression
  */
-export type ExpressionMetadata = {
+export type ExpressionMeta = {
     name: string
     commit: string
     description: string
@@ -14,14 +16,14 @@ export type ExpressionMetadata = {
     path: string
     version: Version
     author?: string
-    bytes?: StateConfig
-    interpreter?: InterpreterMetadata
+    bytes?: ExpressionConfig
+    interpreter?: InterpreterMeta
 }
 
 /**
  * Expression bytes aka StateConfig
  */
-export type StateConfig = {
+export type ExpressionConfig = {
     constants: (string | number)[]
     sources: (string | Uint8Array)[]
 }

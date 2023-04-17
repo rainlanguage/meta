@@ -1,3 +1,6 @@
+// specify the version of the meta in the following line
+// version 0.0.0
+
 import { Version } from "./general";
 
 /**
@@ -5,7 +8,7 @@ import { Version } from "./general";
  * @description Schema for an expression
  * @version 0.01
  */
-export type WordPackMetadata = {
+export type WordPackMeta = {
     name: string
     commit: string
     description: string

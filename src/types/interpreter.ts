@@ -1,17 +1,21 @@
+// specify the version of the meta in the following line
+// version 0.0.0
+
 import { Version } from "./general";
-import { Word, WordPackMetadata } from "./wordpack";
+import { OpMeta } from "./op";
+import { WordPackMeta } from "./wordpack";
 
 /**
  * @title Rain Interpreter Metadata
  * @description Schema for an interpreter
  * @version 0.01
  */
-export type InterpreterMetadata = {
+export type InterpreterMeta = {
     addresses: InterpreterEVMAddresses[]
     name: string
     commit: string
     description: string
-    wordpack: WordPackMetadata
+    wordpack: WordPackMeta
     opmeta: OpMeta[]
     storageLength: number
     path: string
@@ -28,19 +32,4 @@ export type InterpreterChainEVMAddresses = {
     interpreter: string
     integrity: string
     deployer: string
-}
-
-/**
- * Information about opcodes
- */
-export type OpMeta = {
-    enum: number
-    name: string
-    description: string
-    word: Word
-    inputs: number
-    outputs: number
-    isZeroOperand: boolean
-    category: string
-    data?: any
 }

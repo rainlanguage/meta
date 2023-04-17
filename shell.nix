@@ -22,7 +22,7 @@ let
 
     ci-test = pkgs.writeShellScriptBin "ci-test" ''
         flush-all
-        yarn install --ignore-scripts
+        npm install
         build
         local-test
     '';
@@ -38,11 +38,15 @@ let
     '';
 
     lint = pkgs.writeShellScriptBin "lint" ''
-        yarn lint
+        npm run lint
     '';
 
     lint-fix = pkgs.writeShellScriptBin "lint-fix" ''
-        yarn lint-fix
+        npm run lint-fix
+    '';
+
+    gen-schema = pkgs.writeShellScriptBin "gen-schema" ''
+        npm run gen-schema
     '';
 
     in
@@ -60,6 +64,7 @@ let
             flush-all
             lint
             lint-fix
+            gen-schema
         ];
 
         shellHook = ''

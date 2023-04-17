@@ -1,18 +1,6 @@
-import { GraphQLClient } from 'graphql-request';
-import { decodeRainMetaDocument, hexlify, MAGIC_NUMBERS } from "./utils";
+import { GraphQLClient } from "graphql-request";
+import { sgBook } from "./subgraphBook";
 
-/**
- * @public Subgraph endpoints and their chain ids as key/value pairs
- */
-export const sgBook: { [chainId: number | string]: string } = {
-    "0x80001":      "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
-    0x80001:        "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
-    mumbai:         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
-    maticmum:       "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
-    137:            "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-polygon",
-    polygon:        "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-polygon",
-    matic:          "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-polygon"
-};
 
 /**
  * @public Get the query content
@@ -21,7 +9,7 @@ export const sgBook: { [chainId: number | string]: string } = {
  */
 export const getQuery = (address: string): string => {
     if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
-        return `{ expressionDeployer(id: "${address.toLowerCase()}") { meta } }`;
+        return `{ expressionDeployer(id: "${address.toLowerCase()}") { opmeta } }`;
     } 
     else throw new Error("invalid address");
 };
@@ -72,14 +60,8 @@ export async function getOpMetaFromSg(
                 ? source
                 : new Error("no subgraph found");
     if (_url instanceof Error) throw _url;
-    const graphQLClient = new GraphQLClient(_url, {headers: {'Content-Type':'application/json'}});
+    const graphQLClient = new GraphQLClient(_url, {headers: {"Content-Type":"application/json"}});
     const _response = (await graphQLClient.request(_query)) as any;
-    if (_response?.expressionDeployer?.meta) {
-        const _bytes = decodeRainMetaDocument(_response.expressionDeployer.meta)?.find(
-            v => v.get(1) === MAGIC_NUMBERS.OPS_META_V1
-        )?.get(0);
-        if (_bytes) return hexlify(_bytes);
-        else throw new Error("cannot decode the opmeta");
-    }
+    if (_response?.expressionDeployer?.opmeta) return _response.expressionDeployer.opmeta;
     else throw new Error("could not fetch the data from subgraph");
 }
