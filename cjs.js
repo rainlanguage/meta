@@ -6,7 +6,7 @@ const _opMetaSchema = require("./schemas/op.meta.schema.json");
 const _contMetaSchema = require("./schemas/contract.meta.schema.json");
 const _expMetaSchema = require("./schemas/expression.meta.schema.json");
 const _intMetaSchema = require("./schemas/interpreter.meta.schema.json");
-const _wpMetaSchema = require("./schemas/wp.meta.schema.json");
+const _wpMetaSchema = require("./schemas/wordpack.meta.schema.json");
 
 /**
  * @public op meta schema
