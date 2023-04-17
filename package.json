@@ -1,6 +1,6 @@
 {
   "name": "@rainprotocol/meta",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Utility library for Rain Protocol metadata",
   "author": "Rain Protocol",
   "license": "CAL-1.0",
