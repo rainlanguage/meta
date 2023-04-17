@@ -2,11 +2,11 @@
 
 module.exports = require("./dist/cjs/index");
 
-const _opMetaSchema = require("./schema/op.meta.schema.json");
-const _contMetaSchema = require("./schema/contract.meta.schema.json");
-const _expMetaSchema = require("./schema/expression.meta.schema.json");
-const _intMetaSchema = require("./schema/interpreter.meta.schema.json");
-const _wpMetaSchema = require("./schema/wp.meta.schema.json");
+const _opMetaSchema = require("./schemas/op.meta.schema.json");
+const _contMetaSchema = require("./schemas/contract.meta.schema.json");
+const _expMetaSchema = require("./schemas/expression.meta.schema.json");
+const _intMetaSchema = require("./schemas/interpreter.meta.schema.json");
+const _wpMetaSchema = require("./schemas/wp.meta.schema.json");
 
 /**
  * @public op meta schema
