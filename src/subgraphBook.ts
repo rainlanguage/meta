@@ -1,7 +1,7 @@
 /**
  * @public Known subgraph endpoints as key/value pairs
  */
-export const sgBook: { [chainId: number | string]: string } = {
+export const sgBook: { [networkish: number | string]: string } = {
     "0x80001":      "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
     0x80001:        "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
     mumbai:         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",

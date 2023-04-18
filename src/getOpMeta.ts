@@ -4,19 +4,28 @@ import { sgBook } from "./subgraphBook";
 
 /**
  * @public Get the query content
- * @param filter - Address or meta hash of the deployer
+ * @param address - Address of the deployer
  * @returns The query content
  */
-export const getQuery = (filter: string): string => {
-    if (filter.match(/^0x[a-fA-F0-9]{40}$/)) {
-        return `{ expressionDeployer(id: "${filter.toLowerCase()}") { opmeta } }`;
+export const getQuery = (address: string): string => {
+    if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
+        return `{ expressionDeployer(id: "${address.toLowerCase()}") { opmeta } }`;
     }
-    else if (filter.match(/^0x[a-fA-F0-9]{64}$/)) {
+    else throw new Error("invalid address");
+};
+
+/**
+ * @public Get the query content
+ * @param metaHash - hash of the meta of the deployer contract
+ * @returns The query content
+ */
+export const getQueryByHash = (metaHash: string): string => {
+    if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
         return `{ expressionDeployers(where: { meta_: { id: "${
-            filter.toLowerCase()
+            metaHash.toLowerCase()
         }" } } first: 1) { opmeta } }`;
     }
-    else throw new Error("invalid address or hash");
+    else throw new Error("invalid meta hash");
 };
 
 /**
@@ -69,4 +78,35 @@ export async function getOpMetaFromSg(
     const _response = (await graphQLClient.request(_query)) as any;
     if (_response?.expressionDeployer?.opmeta) return _response.expressionDeployer.opmeta;
     else throw new Error("could not fetch the data from subgraph");
+}
+
+/**
+ * @public 
+ * Searches through multiple subgraphs to find the first matching opmeta with provided meta hash
+ * 
+ * @param metaHash - The meta hash to search for
+ * @param additionalSgUrls - Additional subgraph urls, default ones are on "sgBook"
+ * @returns A promise that resolves with opmeta as hex string and rejects if nothing found
+ */
+export async function searchOpMeta(
+    metaHash: string,
+    additionalSgUrls: string[] = []
+): Promise<string> {
+    const _query = getQueryByHash(metaHash);
+    const _sgs: string[] = [];
+    _sgs.push(...additionalSgUrls);
+    Object.values(sgBook).forEach(v=>{
+        if (!_sgs.includes(v)) _sgs.push(v);
+    });
+    const _responses = await Promise.allSettled(_sgs.map(
+        v => new GraphQLClient(v, {headers: {"Content-Type":"application/json"}}).request(_query))
+    );
+    for (const res of _responses) {
+        if (res.status === "fulfilled") {
+            if ((res.value as any)?.expressionDeployers[0]?.opmeta) {
+                return (res.value as any).expressionDeployers[0].opmeta;
+            }
+        }
+    }
+    throw new Error("could not find any result for this meta hash!");
 }
