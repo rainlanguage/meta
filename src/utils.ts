@@ -2,10 +2,11 @@ import Ajv from "ajv";
 import { Buffer } from "buffer/";
 import stringMath from "string-math";
 import { deflate, inflate } from "pako";
-import { decodeAllSync } from "cbor-web";
+import { decodeAllSync, encodeCanonical } from "cbor-web";
 import { format } from "prettier/standalone";
 import babelParser from "prettier/parser-babel";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
+import { keccak256 } from "ethers/lib/utils";
 
 /**
  * @public ethers constants
@@ -560,3 +561,71 @@ export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
     }
     return cborDecode(dataEncoded_.replace(metaDocumentHex, ""));
 };
+
+/**
+ * @public
+ * Use the data provided to encode it using CBOR and following the Rain design.
+ *
+ * The payload could be `any` type, but only some are typed safe. When use this
+ * function should pass the values with their "truly" expected type. For binary
+ * data (like Deflated JSONs) is recommended use ArrayBuffers.
+ *
+ * See more: https://github.com/rainprotocol/metadata-spec/blob/main/README.md
+ *
+ * @param payload_ Data as payload to be added with enconding
+ * @param magicNumber_ The known magic number work as filter on the design
+ * @param contentType_ The type of the payload content
+ * @param options_ The options allow to describe the encoding or language of the
+ * content. No encoding means the payload is to be read literally as per `contentType_`
+ *
+ * @returns The data encoded with CBOR as an hex string.
+ */
+export const cborEncode = (
+    payload_: string | number | Uint8Array | ArrayBuffer,
+    magicNumber_: bigint,
+    contentType_: string,
+    options_?: {
+      contentEncoding?: string;
+      contentLanguage?: string;
+    }
+): string => {
+    const m = new Map();
+    m.set(0, payload_); // Payload
+    m.set(1, magicNumber_); // Magic number
+    m.set(2, contentType_); // Content-Type
+  
+    if (options_) {
+        if (options_.contentEncoding) {
+            m.set(3, options_.contentEncoding); // Content-Encoding
+        }
+  
+        if (options_.contentLanguage) {
+            m.set(4, options_.contentLanguage); // Content-Language
+        }
+    }
+  
+    return encodeCanonical(m).toString("hex").toLowerCase();
+};
+
+/**
+ * @public
+ * Checks if the meta hash matches the opmeta by regenrating the meta hash from the given opmeta
+ * 
+ * @param opmeta - The op meta bytes
+ * @param metaHash - The meta hash
+ * @returns true if the meta hash matches the opmeta and false if it doesn't
+ */
+export function checkOpMetaHash(opmeta: string, metaHash: string) {
+    return keccak256(
+        "0x" + 
+        MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) + 
+        (
+            cborEncode(
+                arrayify(opmeta).buffer, 
+                MAGIC_NUMBERS.OPS_META_V1, 
+                "application/json", 
+                { contentEncoding: "deflate" }
+            )
+        )
+    ) === metaHash;
+}
