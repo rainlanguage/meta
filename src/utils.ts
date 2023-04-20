@@ -608,6 +608,27 @@ export const cborEncode = (
 };
 
 /**
+ * @public Calculates the hash for a given meta
+ * @param metaBytes - The meta bytes to get the hash from
+ * @param type - The meta type
+ * @returns The meta hash
+ */
+export function getMetaHash(metaBytes: BytesLike, type: "contract" | "op") {
+    return keccak256(
+        "0x" + 
+        MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) + 
+        (
+            cborEncode(
+                arrayify(metaBytes).buffer, 
+                type === "op" ? MAGIC_NUMBERS.OPS_META_V1 : MAGIC_NUMBERS.CONTRACT_META_V1, 
+                "application/json", 
+                { contentEncoding: "deflate" }
+            )
+        )
+    );
+}
+
+/**
  * @public
  * Checks if the meta hash matches the opmeta by regenrating the meta hash from the given opmeta
  * 
@@ -616,16 +637,5 @@ export const cborEncode = (
  * @returns true if the meta hash matches the opmeta and false if it doesn't
  */
 export function checkOpMetaHash(opmeta: string, metaHash: string) {
-    return keccak256(
-        "0x" + 
-        MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) + 
-        (
-            cborEncode(
-                arrayify(opmeta).buffer, 
-                MAGIC_NUMBERS.OPS_META_V1, 
-                "application/json", 
-                { contentEncoding: "deflate" }
-            )
-        )
-    ) === metaHash;
+    return getMetaHash(opmeta, "op") === metaHash;
 }
