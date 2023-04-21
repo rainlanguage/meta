@@ -2,11 +2,10 @@ import Ajv from "ajv";
 import { Buffer } from "buffer/";
 import stringMath from "string-math";
 import { deflate, inflate } from "pako";
-import { decodeAllSync, encodeCanonical } from "cbor-web";
 import { format } from "prettier/standalone";
 import babelParser from "prettier/parser-babel";
+import { decodeAllSync, encodeCanonical } from "cbor-web";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
-import { keccak256 } from "ethers/lib/utils";
 
 /**
  * @public ethers constants
@@ -49,7 +48,11 @@ export const {
     /**
      * @public ethers isHexString
      */
-    isHexString
+    isHexString,
+    /**
+     * @public ethers keccak256
+     */
+    keccak256
 } = utils;
 
 
