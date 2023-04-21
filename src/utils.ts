@@ -608,34 +608,82 @@ export const cborEncode = (
 };
 
 /**
- * @public Calculates the hash for a given meta
- * @param metaBytes - The meta bytes to get the hash from
- * @param type - The meta type
+ * @public Calculates the hash for a given op meta
+ * @param opMetaBytes - The op meta bytes to get the hash from
  * @returns The meta hash
  */
-export function getMetaHash(metaBytes: BytesLike, type: "contract" | "op") {
-    return keccak256(
+export function getMetaHash(opMetaBytes: BytesLike): string
+
+/**
+ * @public Calculates the hash for a given contract meta
+ * @param contractMetaBytes - The contract meta bytes
+ * @param abiMetaBytes - The Solidity ABI meta bytes
+ * @returns The meta hash
+ */
+export function getMetaHash(contractMetaBytes: BytesLike, abiMetaBytes: BytesLike): string
+
+export function getMetaHash(metaBytes1: BytesLike, metaBytes2?: BytesLike) {
+    if (metaBytes2 === undefined) return keccak256(
         "0x" + 
         MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) + 
-        (
-            cborEncode(
-                arrayify(metaBytes).buffer, 
-                type === "op" ? MAGIC_NUMBERS.OPS_META_V1 : MAGIC_NUMBERS.CONTRACT_META_V1, 
-                "application/json", 
-                { contentEncoding: "deflate" }
-            )
+        cborEncode(
+            arrayify(metaBytes1).buffer, 
+            MAGIC_NUMBERS.OPS_META_V1, 
+            "application/json", 
+            { contentEncoding: "deflate" }
+        )
+    );
+    else return keccak256(
+        "0x" +
+        MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) + 
+        cborEncode(
+            arrayify(metaBytes1).buffer, 
+            MAGIC_NUMBERS.CONTRACT_META_V1 ,
+            "application/json", 
+            { contentEncoding: "deflate" }
+        ) +
+        cborEncode(
+            arrayify(metaBytes2).buffer, 
+            MAGIC_NUMBERS.SOLIDITY_ABIV2,
+            "application/json", 
+            { contentEncoding: "deflate" }
         )
     );
 }
 
 /**
  * @public
- * Checks if the meta hash matches the opmeta by regenrating the meta hash from the given opmeta
+ * Checks if the op meta hash matches the meta bytes by regenrating the hash
  * 
- * @param opmeta - The op meta bytes
- * @param metaHash - The meta hash
- * @returns true if the meta hash matches the opmeta and false if it doesn't
+ * @param opMetaHash - The op meta hash
+ * @param opMetaBytes - The op meta bytes
+ * @returns true if the op meta hash matches the op meta and false if it doesn't
  */
-export function checkOpMetaHash(opmeta: string, metaHash: string) {
-    return getMetaHash(opmeta, "op") === metaHash;
+export function checkMetaHash(
+    opMetaHash: string,
+    opMetaBytes: BytesLike, 
+): boolean
+
+/**
+ * @public
+ * Checks if the contract meta hash matches the meta sequence by regenrating the hash
+ * 
+ * @param metaHash - The meta hash
+ * @param contractMetaBytes - The contract meta bytes
+ * @param abiMetaBytes - The solidity ABI meta bytes
+ * @returns true if the contract meta hash matches the meta sequence and false if it doesn't
+ */
+export function checkMetaHash(
+    metaHash: string,
+    contractMetaBytes: BytesLike, 
+    abiMetaBytes: BytesLike
+): boolean
+
+export function checkMetaHash(
+    metaHash: string,
+    metaBytes1: BytesLike,
+    metaBytes2?: BytesLike
+): boolean {
+    if (metaBytes2 === undefined) return getMetaHash(metaBytes1) === metaHash;
+    else return getMetaHash(metaBytes1, metaBytes2) === metaHash;
 }
