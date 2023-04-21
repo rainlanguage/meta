@@ -1,5 +1,5 @@
-import { GraphQLClient } from "graphql-request";
 import { sgBook } from "./subgraphBook";
+import { GraphQLClient } from "graphql-request";
 
 
 /**
@@ -11,7 +11,7 @@ export const getQuery = (metaHash: string): string => {
     if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
         return `{ rainMetaV1( id: "${
             metaHash.toLowerCase()
-        }" ) { content { payload magicNumber } } }`;
+        }" ) { metaBytes } }`;
     }
     else throw new Error("invalid meta hash");
 };
@@ -22,12 +22,12 @@ export const getQuery = (metaHash: string): string => {
  * 
  * @param metaHash - The meta hash to search for
  * @param additionalSgUrls - Additional subgraph urls, default ones are on "sgBook"
- * @returns A promise that resolves with meta bytes as hex string and magic number and rejects if nothing found
+ * @returns A promise that resolves with meta bytes as hex string and rejects if nothing found
  */
 export async function searchMeta(
     metaHash: string,
     additionalSgUrls: string[] = []
-): Promise<{ metaBytes: string, magicNumber: string }[]> {
+): Promise<string> {
     const _query = getQuery(metaHash);
     const _sgs: string[] = [];
     _sgs.push(...additionalSgUrls);
@@ -43,15 +43,8 @@ export async function searchMeta(
     );
     for (const res of _responses) {
         if (res.status === "fulfilled") {
-            if ((res.value as any)?.rainMetaV1?.content?.length) {
-                return (res.value as any).rainMetaV1?.content.map(
-                    (v: any) => { 
-                        return {
-                            metaBytes: v.payload,
-                            magicNumber: v.magicNumber
-                        };
-                    }
-                );
+            if ((res.value as any)?.rainMetaV1?.metaBytes) {
+                return (res.value as any).rainMetaV1.metaBytes;
             }
         }
     }
