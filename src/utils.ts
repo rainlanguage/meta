@@ -7,6 +7,7 @@ import babelParser from "prettier/parser-babel";
 import { decodeAllSync, encodeCanonical } from "cbor-web";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
+
 /**
  * @public ethers constants
  */
@@ -55,6 +56,107 @@ export const {
     keccak256
 } = utils;
 
+/**
+ * @public EVM networks chain ids
+ */
+export const ChainId = {
+    ETHEREUM          : 1,
+    ROPSTEN           : 3,
+    RINKEBY           : 4,
+    GÖRLI             : 5,
+    SEPOLIA           : 11155111,
+    KOVAN             : 42,
+    POLYGON           : 137,
+    POLYGON_TESTNET   : 80001,
+    POLYGON_ZKEVM     : 1101,
+    FANTOM            : 250,
+    FANTOM_TESTNET    : 4002,
+    GNOSIS            : 100,
+    BSC               : 56,
+    BSC_TESTNET       : 97,
+    ARBITRUM          : 42161,
+    ARBITRUM_NOVA     : 42170,
+    ARBITRUM_TESTNET  : 79377087078960,
+    AVALANCHE         : 43114,
+    AVALANCHE_TESTNET : 43113,
+    HECO              : 128,
+    HECO_TESTNET      : 256,
+    HARMONY           : 1666600000,
+    HARMONY_TESTNET   : 1666700000,
+    OKEX              : 66,
+    OKEX_TESTNET      : 65,
+    CELO              : 42220,
+    PALM              : 11297108109,
+    MOONRIVER         : 1285,
+    FUSE              : 122,
+    TELOS             : 40,
+    MOONBEAM          : 1284,
+    OPTIMISM          : 10,
+    KAVA              : 2222,
+    METIS             : 1088,
+    BOBA              : 288,
+    BOBA_AVAX         : 43288,
+    BOBA_BNB          : 56288,
+    BTTC              : 199,
+    THUNDERCORE       : 108,
+    // CONSENSUS_ZKEVM_TESTNET : 59140,
+    // SCROLL_ALPHA_TESTNET    : 534353,
+    // BASE_TESTNET            : 84531,
+    // FILECOIN                : 314,
+} as const;
+export type ChainId = (typeof ChainId)[keyof typeof ChainId];
+
+/**
+ * @public EVM networks names
+ */
+export const ChainKey = {
+    [ChainId.ARBITRUM]          : "arbitrum",
+    [ChainId.ARBITRUM_NOVA]     : "arbitrum-nova",
+    [ChainId.ARBITRUM_TESTNET]  : "arbitrum-testnet",
+    [ChainId.AVALANCHE]         : "avalanche",
+    [ChainId.AVALANCHE_TESTNET] : "avalance-testnet",
+    [ChainId.BSC]               : "bsc",
+    [ChainId.BSC_TESTNET]       : "bsc-testnet",
+    [ChainId.CELO]              : "celo",
+    [ChainId.ETHEREUM]          : "ethereum",
+    [ChainId.FANTOM]            : "fantom",
+    [ChainId.FANTOM_TESTNET]    : "fantom-testnet",
+    [ChainId.FUSE]              : "fuse",
+    [ChainId.GÖRLI]             : "goerli",
+    [ChainId.HARMONY]           : "harmony",
+    [ChainId.HARMONY_TESTNET]   : "harmony-testnet",
+    [ChainId.HECO]              : "heco",
+    [ChainId.HECO_TESTNET]      : "heco-testnet",
+    [ChainId.KOVAN]             : "kovan",
+    [ChainId.ROPSTEN]           : "ropsten",
+    [ChainId.POLYGON]           : "polygon",
+    [ChainId.POLYGON_TESTNET]   : "matic-testnet",
+    [ChainId.POLYGON_ZKEVM]     : "polygon-zkevm",
+    [ChainId.MOONBEAM]          : "moonbeam",
+    // [ChainId.MOONBEAM_TESTNET]          : "moonbeam-testnet",
+    [ChainId.MOONRIVER]         : "moonriver",
+    [ChainId.OKEX]              : "okex",
+    [ChainId.OKEX_TESTNET]      : "okex-testnet",
+    [ChainId.PALM]              : "palm",
+    // [ChainId.PALM_TESTNET]              : "palm-testnet",
+    [ChainId.RINKEBY]           : "rinkeby",
+    [ChainId.TELOS]             : "telos",
+    [ChainId.GNOSIS]            : "gnosis",
+    [ChainId.OPTIMISM]          : "optimism",
+    [ChainId.KAVA]              : "kava",
+    [ChainId.METIS]             : "metis",
+    [ChainId.BOBA]              : "boba",
+    [ChainId.BOBA_AVAX]         : "boba-avax",
+    [ChainId.BOBA_BNB]          : "boba-bnb",
+    [ChainId.BTTC]              : "bttc",
+    [ChainId.THUNDERCORE]       : "thundercore",
+    [ChainId.SEPOLIA]           : "sepolia",
+    // [ChainId.CONSENSUS_ZKEVM_TESTNET]   : "consensus-zkevm-testnet",
+    // [ChainId.SCROLL_ALPHA_TESTNET]      : "scroll-alpha-testnet",
+    // [ChainId.BASE_TESTNET]              :"base-testnet",
+    // [ChainId.FILECOIN]                  : "filecoin",
+} as const;
+export type ChainKey = (typeof ChainKey)[keyof typeof ChainKey];
 
 /**
  * @public
