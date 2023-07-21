@@ -1,6 +1,11 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
+import Ajv, { ValidateFunction } from "ajv";
+
+
+const NamePattern = /^[a-z][0-9a-z-]*$/;
+
 /**
  * @title Opcode Metadata
  * @description Schema for opcodes metadata used by RainLang.
@@ -39,10 +44,81 @@ export type OpMeta = {
     aliases?: StringArray[];
 }
 
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace OpMeta {
+    /**
+     * @public Method to type check OpMeta
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is OpMeta {
+        return typeof value === "object"
+            && value !== null
+            && typeof value.name === "string"
+            && NamePattern.test(value.name)
+            && typeof value.desc === "string"
+            && OperandMeta.is(value.operand)
+            && InputMeta.is(value.inputs)
+            && OutputMeta.is(value.outputs)
+            && (
+                typeof value.aliases === "undefined" || (
+                    Array.isArray(value.aliases)
+                    && value.aliases.length > 0
+                    && value.aliases.every((v: any) => 
+                        typeof v === "string"
+                        && NamePattern.test(v)
+                    )
+                )
+            );
+    }
+
+    /**
+     * @public Method to type check array of OpMeta
+     * @param value - The value to typecheck
+     */
+    export function isArray(value: any): value is OpMeta[] {
+        return Array.isArray(value) && value.every(v => OpMeta.is(v));
+    }
+
+    /**
+     * @public Method to validate against OpMeta schema
+     * @param value - The value to check
+     * @param validator - The validator, either the schema as object or ValidatorFunction
+     */
+    export function schemaCheck(value: any, validator: object | ValidateFunction): value is OpMeta {
+        if (typeof validator === "function") return validator(value);
+        else return new Ajv().compile(validator)(value);
+    }
+
+    /**
+     * @public Method to validate against OpMeta schema for an array
+     * @param value - The value to check
+     * @param schema - The opmeta schema
+     */
+    export function schemaCheckArray(value: any, schema: object): value is OpMeta[] {
+        const validator = new Ajv().compile(schema);
+        return Array.isArray(value) && value.every((v: any) => OpMeta.schemaCheck(v, validator));
+    }
+}
+
 /** 
  * @public Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them
  */
 export type InputMeta = Zero | InputArgs
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace InputMeta {
+    /**
+     * @public Method to type check InputMeta
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is InputMeta {
+        return value === 0 || InputArgs.is(value);
+    }
+}
 
 /**
  * @public Data type for input argguments
@@ -87,10 +163,64 @@ export type InputArgs = {
     computation?: string;
 }
 
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace InputArgs {
+    /**
+     * @public Method to type check InputArgs
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is InputArgs {
+        return typeof value === "object"
+            && value !== null
+            && Array.isArray(value.parameters)
+            && value.parameters.every((v: any) => 
+                typeof v === "object"
+                && v !== null
+                && typeof v.name === "string"
+                && NamePattern.test(v.name)
+                && (typeof v.desc === "string" || typeof v.desc === "undefined")
+                && (typeof v.spread === "boolean" || typeof v.spread === "undefined")
+            )
+            && (
+                typeof value.bits === "undefined" || (
+                    Array.isArray(value.bits)
+                    && value.bits.length === 2
+                    && value.bits.every((v: any) => 
+                        typeof v === "number"
+                        && !isNaN(v)
+                        && Number.isInteger(v)
+                        && v >= 0
+                        && v <= 15
+                    )
+                )
+            )
+            && (
+                typeof value.computation === "undefined"
+                || typeof value.computation === "string"
+            );
+    }
+}
+
 /** 
  * @public Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them
  */
 export type OutputMeta = Integer | ComputedOutput
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace OutputMeta {
+    /**
+     * @public Method to type check OutputMeta
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is OutputMeta {
+        return (typeof value === "number" && Number.isInteger(value) && value >= 0)
+            || ComputedOutput.is(value);
+    }
+}
 
 /**
  * @public Data type for computed output
@@ -110,10 +240,52 @@ export type ComputedOutput = {
     computation?: string;
 }
 
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ComputedOutput {
+    /**
+     * @public Method to type check ComputedOutput
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is ComputedOutput {
+        return typeof value === "object"
+            && value !== null
+            && (
+                Array.isArray(value.bits)
+                && value.bits.length === 2
+                && value.bits.every((v: any) => 
+                    typeof v === "number"
+                    && !isNaN(v)
+                    && Number.isInteger(v)
+                    && v >= 0
+                    && v <= 15
+                )
+            )
+            && (
+                typeof value.computation === "undefined"
+                || typeof value.computation === "string"
+            );
+    }
+}
+
 /** 
  * @public Data type of operand arguments, used only for non-constant operands
  */
 export type OperandMeta = Zero | OperandArgs 
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace OperandMeta {
+    /**
+     * @public Method to type check OperandMeta
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is OperandMeta {
+        return value === 0 || OperandArgs.is(value);
+    }
+}
 
 /**
  * @public Data type for computed operand that consists of some arguments
@@ -151,6 +323,57 @@ export type OperandArgs = {
     validRange?: ([LengthInteger] | [LengthInteger, LengthInteger])[];
 }[]
 
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace OperandArgs {
+    /**
+     * @public Method to type check OperandArgs
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is OperandArgs {
+        return Array.isArray(value)
+            && value.length > 0
+            && value.every((e: any) => 
+                typeof e === "object"
+                && e !== null
+                && typeof e.name === "string"
+                && NamePattern.test(e.name)
+                && ( typeof e.desc === "string" || typeof e.desc === "undefined")
+                && ( typeof e.computation === "string" || typeof e.computation === "undefined")
+                && (
+                    typeof e.bits === "undefined" || (
+                        Array.isArray(e.bits)
+                        && e.bits.length === 2
+                        && e.bits.every((v: any) => 
+                            typeof v === "number"
+                            && !isNaN(v)
+                            && Number.isInteger(v)
+                            && v >= 0
+                            && v <= 15
+                        )
+                    )
+                )
+                && (
+                    typeof e.validRange === "undefined" || (
+                        Array.isArray(e.validRange)
+                        && e.validRange.length > 0
+                        && e.validRange.every((v: any) => 
+                            Array.isArray(v)
+                            && (v.length === 1 || v.length === 2)
+                            && v.every((i: any) => 
+                                typeof i === "number"
+                                && !isNaN(i)
+                                && Number.isInteger(i)
+                                && i >= 0
+                                && i <= 65535
+                            )
+                        )
+                    )
+                )
+            );
+    }
+}
 
 /**
  * @asType integer

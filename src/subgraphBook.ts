@@ -8,4 +8,5 @@ export const sgBook = {
     [ChainId.POLYGON]         : "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-polygon",
     [ChainId.POLYGON_TESTNET] : "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
 } as const;
+
 export type sgBook = (typeof sgBook)[keyof typeof sgBook];

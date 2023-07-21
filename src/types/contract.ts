@@ -1,6 +1,11 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
+import Ajv, { ValidateFunction } from "ajv";
+
+
+const NamePattern = /^[a-z][0-9a-z-]*$/;
+
 /**
  * @title Rain Contract Metadata
  * @description Required info about a contract that receives expression in at least one of its methods.
@@ -37,6 +42,110 @@ export type ContractMeta = {
      * @minItems 1
      */
     methods: Method[]
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ContractMeta {
+    /**
+     * @public Method to type check ContractMeta
+     * @param value - The value to typecheck
+     */
+    export function is(value: any): value is ContractMeta {
+        return typeof value === "object"
+            && value !== null
+            && typeof value.name === "string"
+            && value.name
+            && typeof value.abiName === "string"
+            && typeof value.desc === "string"
+            && typeof value.alias === "string"
+            && NamePattern.test(value.alias)
+            && typeof value.source === "string"
+            && Array.isArray(value.methods)
+            && value.methods.length > 0
+            && value.methods.every((v: any) => 
+                typeof v === "object"
+                && v !== null
+                && typeof v.name === "string"
+                && v.name
+                && typeof v.abiName === "string"
+                && typeof v.desc === "string"
+                && (typeof v.inputs === "undefined" || (
+                    Array.isArray(v.inputs)
+                    && v.inputs.length > 0
+                    && v.inputs.every((e: any) => 
+                        typeof e === "object"
+                        && e !== null
+                        && typeof e.name === "string"
+                        && e.name
+                        && typeof e.abiName === "string"
+                        && typeof e.desc === "string"
+                        && typeof e.path === "string"
+                    )
+                ))
+                && Array.isArray(v.expressions)
+                && v.expressions.length > 0
+                && v.expressions.every((e: any) => 
+                    typeof e === "object"
+                    && e !== null
+                    && typeof e.name === "string"
+                    && e.name
+                    && typeof e.abiName === "string"
+                    && typeof e.desc === "string"
+                    && typeof e.path === "string" 
+                    && (typeof e.signedContext === "undefined" || typeof e.signedContext === "boolean")
+                    && (typeof e.callerContext === "undefined" || typeof e.callerContext === "boolean")
+                    && (typeof e.contextColumns === "undefined" || (
+                        Array.isArray(e.contextColumns)
+                        && e.contextColumns.length > 0
+                        && e.contextColumns.every((c: any) => 
+                            typeof c === "object"
+                            && c !== null
+                            && typeof c.name === "string"
+                            && c.name
+                            && (typeof c.desc === "undefined" || typeof c.desc === "string")
+                            && typeof c.alias === "string"
+                            && NamePattern.test(c.alias)
+                            && typeof c.columnIndex === "number"
+                            && Number.isInteger(c.columnIndex)
+                            && c.columnIndex >= 0
+                            && c.columnIndex <= 255
+                            && (typeof c.cells === "undefined" || (
+                                Array.isArray(c.cells)
+                                && c.cells.length > 0
+                                && c.cells.every((r: any) => 
+                                    typeof r === "object"
+                                    && r !== null
+                                    && typeof r.name === "string"
+                                    && r.name
+                                    && (typeof r.desc === "undefined" || typeof r.desc === "string")
+                                    && typeof r.alias === "string"
+                                    && NamePattern.test(r.alias)
+                                    && typeof r.cellIndex === "number"
+                                    && Number.isInteger(r.cellIndex)
+                                    && r.cellIndex >= 0
+                                    && r.cellIndex <= 255
+                                )
+                            ))
+                        )
+                    ))
+                )
+            );
+    }
+
+    /**
+     * @public Method to validate against ContractMeta schema
+     * @param value - The value to check
+     * @param validator - The validator, either the schema as object or ValidatorFunction
+     */
+    export function schemaCheck(
+        value: any,
+        validator: object | ValidateFunction
+    ): value is ContractMeta {
+        if (typeof validator === "function") return validator(value);
+        else return new Ajv().compile(validator)(value);
+    }
 }
 
 /**
