@@ -1,4 +1,3 @@
-import { sgBook } from "./subgraphBook";
 import { GraphQLClient } from "graphql-request";
 
 
@@ -21,32 +20,27 @@ export const getQuery = (metaHash: string): string => {
  * Searches through multiple subgraphs to find the first matching meta with the given hash
  * 
  * @param metaHash - The meta hash to search for
- * @param additionalSgUrls - Additional subgraph urls, default ones are on "sgBook"
+ * @param subgraphUrls - Subgraph urls to query from
  * @returns A promise that resolves with meta bytes as hex string and rejects if nothing found
  */
 export async function searchMeta(
     metaHash: string,
-    additionalSgUrls: string[] = []
+    subgraphUrls: string[]
 ): Promise<string> {
     const _query = getQuery(metaHash);
-    const _sgs: string[] = [];
-    _sgs.push(...additionalSgUrls);
-    Object.values(sgBook).forEach(v=>{
-        if (!_sgs.includes(v)) _sgs.push(v);
-    });
-    const _responses = await Promise.allSettled(_sgs.map(
-        v => new GraphQLClient(
-            v, 
-            { headers: { "Content-Type":"application/json" } }
-        )
-            .request(_query))
-    );
-    for (const res of _responses) {
-        if (res.status === "fulfilled") {
-            if ((res.value as any)?.rainMetaV1?.metaBytes) {
-                return (res.value as any).rainMetaV1.metaBytes;
-            }
+    if (!subgraphUrls.length) throw new Error("no subgraph URL provided");
+    try {
+        const _res = await Promise.any(subgraphUrls.map(v => 
+            new GraphQLClient(
+                v, { headers: { "Content-Type":"application/json" } }
+            ).request(_query))
+        );
+        if ((_res as any)?.rainMetaV1?.metaBytes) {
+            return Promise.resolve((_res as any).rainMetaV1.metaBytes);
         }
+        else return Promise.reject("could not find any result for this meta hash!");
     }
-    throw new Error("could not find any result for this meta hash!");
+    catch (error) {
+        return Promise.reject("could not find any result for this meta hash!");
+    }
 }
