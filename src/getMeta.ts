@@ -29,11 +29,18 @@ export async function searchMeta(
 ): Promise<string> {
     const _query = getQuery(metaHash);
     if (!subgraphUrls.length) throw new Error("no subgraph URL provided");
-    const _response = await Promise.any(subgraphUrls.map(v => 
-        new GraphQLClient(v, { headers: { "Content-Type":"application/json" } }).request(_query))
-    );
-    if ((_response as any)?.rainMetaV1?.metaBytes) {
-        return (_response as any).rainMetaV1.metaBytes;
+    try {
+        const _res = Promise.any(subgraphUrls.map(v => 
+            new GraphQLClient(
+                v, { headers: { "Content-Type":"application/json" } }
+            ).request(_query))
+        );
+        if ((_res as any)?.rainMetaV1?.metaBytes) {
+            return Promise.resolve((_res as any).rainMetaV1.metaBytes);
+        }
+        else return Promise.reject("could not find any result for this meta hash!");
     }
-    else throw new Error("could not find any result for this meta hash!");
+    catch (error) {
+        return Promise.reject("could not find any result for this meta hash!");
+    }
 }

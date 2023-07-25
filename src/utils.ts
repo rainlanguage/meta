@@ -797,34 +797,24 @@ export const metaFromBytes = (bytes: BytesLike): string => {
 /**
  * @public Method to get array of OpMetas from a meta string content 
  * @param meta - The meta to convert to OpMeta if it has valid content
- * @returns array of OpMeta or undefined if content is not valid OpMeta
+ * @returns array of OpMeta objects
  */
-export const toOpMeta = (meta: string): OpMeta[] | undefined => {
-    try{
-        let parsed = JSON.parse(meta);
-        if (!Array.isArray(parsed)) parsed = [parsed];
-        if (validateOpMeta(parsed)) return parsed;
-        else return undefined;
-    }
-    catch {
-        return undefined;
-    }
+export const toOpMeta = (meta: string): OpMeta[] => {
+    let parsed = JSON.parse(meta);
+    if (!Array.isArray(parsed)) parsed = [parsed];
+    if (validateOpMeta(parsed)) return parsed;
+    else throw "invalid op meta content";
 };
 
 /**
  * @public Method to get ContractMeta from a meta string content 
  * @param meta - The meta to convert to ContractMeta if it has valid content
- * @returns ContractMeta object or undefined if content is not valid ContractMeta
+ * @returns ContractMeta object
  */
-export const toContractMeta = (meta: string): ContractMeta | undefined => {
-    try{
-        const parsed = JSON.parse(meta);
-        if (ContractMeta.is(parsed)) return parsed;
-        else return undefined;
-    }
-    catch {
-        return undefined;
-    }
+export const toContractMeta = (meta: string): ContractMeta => {
+    const parsed = JSON.parse(meta);
+    if (ContractMeta.is(parsed)) return parsed;
+    else throw "invalid contract meta content";
 };
 
 /**
