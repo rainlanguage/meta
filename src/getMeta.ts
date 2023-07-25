@@ -30,7 +30,7 @@ export async function searchMeta(
     const _query = getQuery(metaHash);
     if (!subgraphUrls.length) throw new Error("no subgraph URL provided");
     try {
-        const _res = Promise.any(subgraphUrls.map(v => 
+        const _res = await Promise.any(subgraphUrls.map(v => 
             new GraphQLClient(
                 v, { headers: { "Content-Type":"application/json" } }
             ).request(_query))
