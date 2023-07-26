@@ -962,7 +962,7 @@ export function checkMetaHash(
  * @public Check if a value is of MAGIC_NUMBERS
  * @param value - The value to check
  */
-export function isRainMagicNumber(value: any): value is MAGIC_NUMBERS {
+export function isMagicNumber(value: any): value is MAGIC_NUMBERS {
     return typeof value === "bigint"
         && (
             MAGIC_NUMBERS.CONTRACT_META_V1      === value
