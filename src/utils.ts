@@ -840,9 +840,7 @@ export const cborDecode = (dataEncoded_: string): Array<any> => {
 * @returns An array with the values decoded.
 */
 export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
-    const metaDocumentHex =
-  "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
-
+    const metaDocumentHex = "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
     dataEncoded_ = dataEncoded_.toLowerCase().startsWith("0x")
         ? dataEncoded_
         : "0x" + dataEncoded_;
@@ -896,7 +894,6 @@ export const cborEncode = (
             m.set(4, options_.contentLanguage); // Content-Language
         }
     }
-  
     return encodeCanonical(m).toString("hex").toLowerCase();
 };
 
@@ -959,4 +956,19 @@ export function checkMetaHash(
 ): boolean {
     if (isBytesLike(metaBytes)) return keccak256(metaBytes) === metaHash;
     else return getMetaHash(metaBytes, magicNumbers!) === metaHash;
+}
+
+/**
+ * @public Check if a value is of MAGIC_NUMBERS
+ * @param value - The value to check
+ */
+export function isRainMagicNumber(value: any): value is MAGIC_NUMBERS {
+    return typeof value === "bigint"
+        && (
+            MAGIC_NUMBERS.CONTRACT_META_V1      === value
+            || MAGIC_NUMBERS.DOTRAIN            === value
+            || MAGIC_NUMBERS.OPS_META_V1        === value
+            || MAGIC_NUMBERS.RAIN_META_DOCUMENT === value
+            || MAGIC_NUMBERS.SOLIDITY_ABIV2     === value
+        );
 }
