@@ -2,6 +2,33 @@ import { GraphQLClient } from "graphql-request";
 
 
 /**
+ * @public The query search result from subgraph for ameta hash
+ */
+export type MetaSearchResult = {
+    /**
+     * Sequence of meta bytes content
+     */
+    rainMetaV1: {
+        metaBytes: string;
+    };
+    /**
+     * Individual meta bytes content
+     */
+    metaContentV1: null;
+} | {
+    /**
+     * Sequence of meta bytes content
+     */
+    rainMetaV1: null;
+    /**
+     * Individual meta bytes content
+     */
+    metaContentV1: {
+        encodedData: string;
+    };
+};
+
+/**
  * @public Get the query for RainMetaV1 and MetaContentV1
  * @param metaHash - hash of the deployed meta
  * @returns The query content
@@ -30,13 +57,19 @@ export async function searchMeta(
     metaHash: string,
     subgraphUrls: string[],
     timeout = 5000
-): Promise<any> {
-    const _request = async(url: string, query: string, timeout: number) => {
+): Promise<MetaSearchResult> {
+    const _request = async(
+        url: string,
+        query: string,
+        timeout: number
+    ): Promise<MetaSearchResult> => {
         try {
             const _res = await new GraphQLClient(
                 url, { headers: { "Content-Type":"application/json" }, timeout }
             ).request(query) as any;
-            if (Object.values(_res).some(v => v !== null)) return Promise.resolve(_res);
+            if (Object.values(_res).some(v => v !== null)) return Promise.resolve(
+                _res as MetaSearchResult
+            );
             else return Promise.reject("no matching record was found");
         }
         catch (error) {
