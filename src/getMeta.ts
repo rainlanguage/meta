@@ -70,7 +70,7 @@ export async function searchMeta(
             if (Object.values(_res).some(v => v !== null)) return Promise.resolve(
                 _res as MetaSearchResult
             );
-            else return Promise.reject("no matching record was found");
+            else return Promise.reject(new Error("no matching record was found"));
         }
         catch (error) {
             return Promise.reject(error);

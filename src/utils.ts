@@ -364,9 +364,9 @@ export const validateOpMeta = (opmeta: any): opmeta is OpMeta[] => {
         || typeof opmeta === "function"
         || typeof opmeta === "boolean"
         || typeof opmeta === "undefined"
-    ) throw "invalid opmeta type";
+    ) throw new Error("invalid opmeta type");
     if (typeof opmeta === "string") opmeta = JSON.parse(opmeta);
-    if (!OpMeta.isArray(opmeta)) throw "invalid opmeta type";
+    if (!OpMeta.isArray(opmeta)) throw new Error("invalid opmeta type");
     else {
         // in-depth validation for op meta
         const _allAliases = [];
@@ -803,7 +803,7 @@ export const toOpMeta = (meta: string): OpMeta[] => {
     let parsed = JSON.parse(meta);
     if (!Array.isArray(parsed)) parsed = [parsed];
     if (validateOpMeta(parsed)) return parsed;
-    else throw "invalid op meta content";
+    else throw new Error("invalid op meta content");
 };
 
 /**
@@ -814,7 +814,7 @@ export const toOpMeta = (meta: string): OpMeta[] => {
 export const toContractMeta = (meta: string): ContractMeta => {
     const parsed = JSON.parse(meta);
     if (ContractMeta.is(parsed)) return parsed;
-    else throw "invalid contract meta content";
+    else throw new Error("invalid contract meta content");
 };
 
 /**
@@ -905,7 +905,9 @@ export const cborEncode = (
  */
 export function getMetaHash(metaBytes: BytesLike[], magicNumbers: MAGIC_NUMBERS[]): string {
     let body = "";
-    if (metaBytes.length !== magicNumbers.length) throw "metaBytes and magicNumbers length don't match";
+    if (metaBytes.length !== magicNumbers.length) throw new Error(
+        "metaBytes and magicNumbers length don't match"
+    );
     else {
         for (let i = 0; i < metaBytes.length; i++) {
             body = body + cborEncode(
