@@ -784,14 +784,11 @@ export function bytesFromMeta(
  * @returns meta content as string
  */
 export const metaFromBytes = (bytes: BytesLike): string => {
-    if (isBytesLike(bytes)) {
-        return Buffer.from(
-            inflate(
-                arrayify(bytes, { allowMissingPrefix: true })
-            )
-        ).toString();
-    }
-    else throw new Error("invalid meta, must be valid BytesLike type");
+    return Buffer.from(
+        inflate(
+            arrayify(bytes, { allowMissingPrefix: true })
+        )
+    ).toString();
 };
 
 /**
