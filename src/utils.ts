@@ -1,12 +1,13 @@
 import Ajv from "ajv";
-import { Buffer } from "buffer/";
 import { OpMeta } from "./types/op";
 import stringMath from "string-math";
+import { AbiMeta } from "./types/abi";
 import { deflate, inflate } from "pako";
 import { format } from "prettier/standalone";
 import { MAGIC_NUMBERS } from "./magicNumbers";
 import { ContractMeta } from "./types/contract";
 import babelParser from "prettier/parser-babel";
+import { AuthoringMeta } from "./types/authoring";
 import { decodeAllSync, encodeCanonical } from "cbor-web";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
@@ -56,110 +57,16 @@ export const {
     /**
      * @public ethers keccak256
      */
-    keccak256
+    keccak256,
+    /**
+     * @public ethers isAddress
+     */
+    isAddress,
+    /**
+     * @public ethers default encoder
+     */
+    defaultAbiCoder
 } = utils;
-
-/**
- * @public EVM networks chain ids
- */
-export const ChainId = {
-    ETHEREUM          : 1,
-    ROPSTEN           : 3,
-    RINKEBY           : 4,
-    GÖRLI             : 5,
-    SEPOLIA           : 11155111,
-    KOVAN             : 42,
-    POLYGON           : 137,
-    POLYGON_TESTNET   : 80001,
-    POLYGON_ZKEVM     : 1101,
-    FANTOM            : 250,
-    FANTOM_TESTNET    : 4002,
-    GNOSIS            : 100,
-    BSC               : 56,
-    BSC_TESTNET       : 97,
-    ARBITRUM          : 42161,
-    ARBITRUM_NOVA     : 42170,
-    ARBITRUM_TESTNET  : 79377087078960,
-    AVALANCHE         : 43114,
-    AVALANCHE_TESTNET : 43113,
-    HECO              : 128,
-    HECO_TESTNET      : 256,
-    HARMONY           : 1666600000,
-    HARMONY_TESTNET   : 1666700000,
-    OKEX              : 66,
-    OKEX_TESTNET      : 65,
-    CELO              : 42220,
-    PALM              : 11297108109,
-    MOONRIVER         : 1285,
-    FUSE              : 122,
-    TELOS             : 40,
-    MOONBEAM          : 1284,
-    OPTIMISM          : 10,
-    KAVA              : 2222,
-    METIS             : 1088,
-    BOBA              : 288,
-    BOBA_AVAX         : 43288,
-    BOBA_BNB          : 56288,
-    BTTC              : 199,
-    THUNDERCORE       : 108,
-    // CONSENSUS_ZKEVM_TESTNET : 59140,
-    // SCROLL_ALPHA_TESTNET    : 534353,
-    // BASE_TESTNET            : 84531,
-    // FILECOIN                : 314,
-} as const;
-export type ChainId = (typeof ChainId)[keyof typeof ChainId];
-
-/**
- * @public EVM networks names
- */
-export const ChainKey = {
-    [ChainId.ARBITRUM]          : "arbitrum",
-    [ChainId.ARBITRUM_NOVA]     : "arbitrum-nova",
-    [ChainId.ARBITRUM_TESTNET]  : "arbitrum-testnet",
-    [ChainId.AVALANCHE]         : "avalanche",
-    [ChainId.AVALANCHE_TESTNET] : "avalance-testnet",
-    [ChainId.BSC]               : "bsc",
-    [ChainId.BSC_TESTNET]       : "bsc-testnet",
-    [ChainId.CELO]              : "celo",
-    [ChainId.ETHEREUM]          : "ethereum",
-    [ChainId.FANTOM]            : "fantom",
-    [ChainId.FANTOM_TESTNET]    : "fantom-testnet",
-    [ChainId.FUSE]              : "fuse",
-    [ChainId.GÖRLI]             : "goerli",
-    [ChainId.HARMONY]           : "harmony",
-    [ChainId.HARMONY_TESTNET]   : "harmony-testnet",
-    [ChainId.HECO]              : "heco",
-    [ChainId.HECO_TESTNET]      : "heco-testnet",
-    [ChainId.KOVAN]             : "kovan",
-    [ChainId.ROPSTEN]           : "ropsten",
-    [ChainId.POLYGON]           : "polygon",
-    [ChainId.POLYGON_TESTNET]   : "matic-testnet",
-    [ChainId.POLYGON_ZKEVM]     : "polygon-zkevm",
-    [ChainId.MOONBEAM]          : "moonbeam",
-    // [ChainId.MOONBEAM_TESTNET]          : "moonbeam-testnet",
-    [ChainId.MOONRIVER]         : "moonriver",
-    [ChainId.OKEX]              : "okex",
-    [ChainId.OKEX_TESTNET]      : "okex-testnet",
-    [ChainId.PALM]              : "palm",
-    // [ChainId.PALM_TESTNET]              : "palm-testnet",
-    [ChainId.RINKEBY]           : "rinkeby",
-    [ChainId.TELOS]             : "telos",
-    [ChainId.GNOSIS]            : "gnosis",
-    [ChainId.OPTIMISM]          : "optimism",
-    [ChainId.KAVA]              : "kava",
-    [ChainId.METIS]             : "metis",
-    [ChainId.BOBA]              : "boba",
-    [ChainId.BOBA_AVAX]         : "boba-avax",
-    [ChainId.BOBA_BNB]          : "boba-bnb",
-    [ChainId.BTTC]              : "bttc",
-    [ChainId.THUNDERCORE]       : "thundercore",
-    [ChainId.SEPOLIA]           : "sepolia",
-    // [ChainId.CONSENSUS_ZKEVM_TESTNET]   : "consensus-zkevm-testnet",
-    // [ChainId.SCROLL_ALPHA_TESTNET]      : "scroll-alpha-testnet",
-    // [ChainId.BASE_TESTNET]              :"base-testnet",
-    // [ChainId.FILECOIN]                  : "filecoin",
-} as const;
-export type ChainKey = (typeof ChainKey)[keyof typeof ChainKey];
 
 /**
  * @public
@@ -756,6 +663,24 @@ export function bytesFromMeta(contractMeta: ContractMeta): string
 
 /**
  * @public
+ * Method to compress and generate deployable bytes for Authoring meta
+ *
+ * @param meta - Array of AuthoringMeta items
+ * @returns Bytes as HexString
+ */
+export function bytesFromMeta(authoringMeta: AuthoringMeta[]): string
+
+/**
+ * @public
+ * Method to compress and generate deployable bytes for ABI meta
+ *
+ * @param meta - ABI meta
+ * @returns Bytes as HexString
+ */
+export function bytesFromMeta(abiMeta: AbiMeta): string
+
+/**
+ * @public
  * Method to compress and generate deployable bytes for any meta as string
  *
  * @param meta - The raw string content of the meta
@@ -764,16 +689,32 @@ export function bytesFromMeta(contractMeta: ContractMeta): string
 export function bytesFromMeta(meta: string): string
 
 export function bytesFromMeta(
-    meta: OpMeta[] | ContractMeta | string
+    meta: OpMeta[] | ContractMeta | string | AuthoringMeta[] | AbiMeta,
 ): string {
     let _meta;
+    let raw = false;
     if (typeof meta === "string") _meta = meta;
-    else if (OpMeta.isArray(meta) || ContractMeta.is(meta)) _meta = format(
+    else if (OpMeta.isArray(meta) || ContractMeta.is(meta) || AbiMeta.is(meta)) _meta = format(
         JSON.stringify(meta, null, 4), 
-        { parser: "json",  plugins: [babelParser] }
+        { parser: "json",  plugins: [ babelParser ] }
     );
+    else if (AuthoringMeta.isArray(meta)) {
+        _meta = arrayify(defaultAbiCoder.encode(
+            [ AuthoringMeta.Struct ],
+            [ meta.map(v => {
+                return {
+                    word: hexlify(
+                        Uint8Array.from(v.word.split("").map(v => v.charCodeAt(0)))
+                    ).padEnd(66, "0"),
+                    operandParserOffset: v.operandParserOffset,
+                    description: v.description
+                };
+            }) ]
+        ));
+        raw = false;
+    }
     else throw new Error("invalid type for meta");
-    return hexlify(deflate(_meta), { allowMissingPrefix: true });
+    return hexlify(deflate(_meta, { raw }), { allowMissingPrefix: true });
 }
 
 /**
@@ -781,14 +722,34 @@ export function bytesFromMeta(
  * Decompress and convert bytes to meta as string
  *
  * @param bytes - Bytes to decompress and convert to json string
+ * @param encoding - The meta encoding type, default is "json"
  * @returns meta content as string
  */
-export const metaFromBytes = (bytes: BytesLike): string => {
-    return Buffer.from(
-        inflate(
-            arrayify(bytes, { allowMissingPrefix: true })
-        )
-    ).toString();
+export const metaFromBytes = (bytes: BytesLike, encoding: "json" | "cbor" = "json"): string => {
+    const _byteArray = arrayify(bytes, { allowMissingPrefix: true });
+    try {
+        if (encoding === "cbor") return hexlify(
+            inflate(_byteArray, { raw: false }),
+            { allowMissingPrefix: true }
+        );
+        else return inflate(_byteArray, { raw: false, to: "string" });
+    }
+    catch (err1) {
+        try {
+            if (encoding === "cbor") return hexlify(
+                inflate(_byteArray, { raw: true }),
+                { allowMissingPrefix: true }
+            );
+            else return inflate(_byteArray, { raw: true, to: "string" });
+        }
+        catch (err2) {
+            throw {
+                message: "could not get meta",
+                inflateTry: err1,
+                rawInflateTry: err2
+            };
+        }
+    }
 };
 
 /**
@@ -969,5 +930,6 @@ export function isMagicNumber(value: any): value is MAGIC_NUMBERS {
             || MAGIC_NUMBERS.OPS_META_V1        === value
             || MAGIC_NUMBERS.RAIN_META_DOCUMENT === value
             || MAGIC_NUMBERS.SOLIDITY_ABIV2     === value
+            || MAGIC_NUMBERS.AUTHORING_META_V1  === value
         );
 }

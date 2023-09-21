@@ -1,10 +1,21 @@
-import { ChainId } from "./utils";
+import { ChainId } from "./chains";
 
 
 /**
  * @public Known Rain subgraph endpoints paired with EVM chain ids
  */
 export const RAIN_SUBGRAPHS = {
+    is: (value: any): value is string => {
+        return typeof value === "string"
+            && value.length > 0
+            && Object.entries(
+                RAIN_SUBGRAPHS
+            ).filter(
+                v => v[0] !== "is"
+            ).some(
+                v => (v[1] as any).includes(value)
+            );
+    },
     [ChainId.ETHEREUM]: [
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-ethereum",
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np-eth"
@@ -16,7 +27,10 @@ export const RAIN_SUBGRAPHS = {
     [ChainId.POLYGON_TESTNET]: [
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np"
-    ],
+    ]
 } as const;
 
-export type RAIN_SUBGRAPHS = (typeof RAIN_SUBGRAPHS)[keyof typeof RAIN_SUBGRAPHS];
+export type RAIN_SUBGRAPHS = Exclude<
+    (typeof RAIN_SUBGRAPHS)[keyof typeof RAIN_SUBGRAPHS],
+    (...args: any[]) => any
+>[number];

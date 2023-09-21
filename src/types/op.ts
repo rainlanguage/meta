@@ -2,6 +2,7 @@
 // version 0.0.0
 
 import Ajv, { ValidateFunction } from "ajv";
+import { metaFromBytes, toOpMeta } from "../utils";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -99,6 +100,13 @@ export namespace OpMeta {
     export function schemaCheckArray(value: any, schema: object): value is OpMeta[] {
         const validator = new Ajv().compile(schema);
         return Array.isArray(value) && value.every((v: any) => OpMeta.schemaCheck(v, validator));
+    }
+
+    /**
+     * @public Method to get array of OpMeta object from raw bytes
+     */
+    export function fromBytes(value: any): OpMeta[] {
+        return toOpMeta(metaFromBytes(value));
     }
 }
 

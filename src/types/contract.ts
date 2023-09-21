@@ -2,6 +2,7 @@
 // version 0.0.0
 
 import Ajv, { ValidateFunction } from "ajv";
+import { metaFromBytes, toContractMeta } from "../utils";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -145,6 +146,13 @@ export namespace ContractMeta {
     ): value is ContractMeta {
         if (typeof validator === "function") return validator(value);
         else return new Ajv().compile(validator)(value);
+    }
+
+    /**
+     * @public Method to get ContractMeta object from raw bytes
+     */
+    export function fromBytes(value: any): ContractMeta {
+        return toContractMeta(metaFromBytes(value));
     }
 }
 
