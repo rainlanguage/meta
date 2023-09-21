@@ -13,6 +13,7 @@ export type NPMetaSearchResult = {
     contracts: {  
         id: string;
         deployedBytecode: string;
+        abimeta: string;
     }[]
 }
 namespace NPMetaSearchResult {
@@ -27,7 +28,11 @@ namespace NPMetaSearchResult {
             && value.contracts.every((v: any) => typeof v === "object"
                 && v !== null
                 && "id" in v 
-                ? isAddress(v.id) && isBytesLike(v.deployedBytecode) 
+                ? isAddress(v.id) 
+                    && isBytesLike(v.deployedBytecode) 
+                    && Array.isArray(v.meta)
+                    && v.meta.length === 1
+                    && isBytesLike(v.meta[0].rawBytes)
                 : true
             );
     }
@@ -49,6 +54,9 @@ export const getNPQuery = (metaHash: string): string => {
             ... on ExpressionDeployer { 
                 id
                 deployedBytecode
+                meta(where: { magicNumber: "18439425400648969438" }) {
+                    rawBytes
+                }
             } 
         } 
     } 
@@ -77,11 +85,16 @@ export async function searchNPMeta(
             const _res = (await new GraphQLClient(
                 url, { headers: { "Content-Type":"application/json" }, timeout }
             ).request(_query) as any)?.meta;
+            if (!_res) Promise.reject(new Error("no matching record was found"));
             if (NPMetaSearchResult.is(_res)) {
                 _res.contracts = _res.contracts.filter(v => "id" in v);
+                _res.contracts.forEach((v: any) => {
+                    v.abimeta = v.meta[0].rawBytes;
+                    delete v.meta;
+                });
                 return Promise.resolve(_res);
             }
-            else return Promise.reject(new Error("no matching record was found"));
+            else return Promise.reject(new Error("unexpected returned value"));
         }
         catch (error) {
             return Promise.reject(error);

@@ -1,6 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
+import { utils } from "ethers";
 import { metaFromBytes } from "../utils";
 
 
@@ -55,5 +56,14 @@ export namespace AbiMeta {
         const _abi = JSON.parse(metaFromBytes(value));
         if (AbiMeta.is(_abi)) return _abi;
         else throw "invalid abi meta";
+    }
+
+    /**
+     * @public Method to get ethers interface from raw meta bytes
+     * @param value - The raw meta to get interface from
+     */
+    export function getInterface(value: any): utils.Interface {
+        const abi = fromBytes(value);
+        return new utils.Interface(abi);
     }
 }
