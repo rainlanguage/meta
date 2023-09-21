@@ -11,7 +11,7 @@ export type NPMetaSearchResult = {
     id: string; 
     sequence: {
         id: string;
-        rawBytes: string;
+        payload: string;
         magicNumber: bigint;
     }[];
     contracts: {  
@@ -23,7 +23,7 @@ export type NPMetaSearchResult = {
 } | {
     __typename: "ContentMetaV1"; 
     id: string; 
-    rawBytes: string;
+    payload: string;
     magicNumber: bigint; 
     contracts: {  
         id: string;
@@ -50,16 +50,17 @@ namespace NPMetaSearchResult {
                             typeof v.id === "string"
                             && isBytesLike(v.id)
                             && v.id.length === 66
-                            && isBytesLike(v.rawBytes)
+                            && isBytesLike(v.payload)
                             && MAGIC_NUMBERS.is(BigInt(v.magicNumber))
                         )
                     )
                     : (
-                        isBytesLike(value.rawBytes)
+                        isBytesLike(value.payload)
                         && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
                     )
             )
             && Array.isArray(value.contracts)
+            && value.contracts.length > 0
             && value.contracts.every((v: any) => typeof v === "object"
                 && v !== null
                 && (
@@ -69,7 +70,7 @@ namespace NPMetaSearchResult {
                             && isBytesLike(v.deployedBytecode) 
                             && Array.isArray(v.meta)
                             && v.meta.length === 1
-                            && isBytesLike(v.meta[0].rawBytes)
+                            && isBytesLike(v.meta[0].payload)
                         )
                         : true
                 )
@@ -96,12 +97,12 @@ export const getNPQuery = (metaHash: string): string => {
                 ]}
             ) {
                 id
-                rawBytes
+                payload
                 magicNumber
             }
         }
         ... on ContentMetaV1 {
-            rawBytes 
+            payload 
             magicNumber 
         }
         contracts { 
@@ -112,7 +113,7 @@ export const getNPQuery = (metaHash: string): string => {
                     blockNumber
                 }
                 meta(where: { magicNumber: "18439425400648969438" }) {
-                    rawBytes
+                    payload
                 }
             }
         } 
@@ -146,7 +147,7 @@ export async function searchNPMeta(
             if (NPMetaSearchResult.is(_res)) {
                 _res.contracts = _res.contracts.filter(v => "id" in v);
                 _res.contracts.forEach((v: any) => {
-                    v.abimeta = v.meta[0].rawBytes;
+                    v.abimeta = v.meta[0].payload;
                     delete v.meta;
                     v.blockNumber = Number(v.deployTransaction.blockNumber);
                     delete v.deployTransaction;
@@ -168,5 +169,3 @@ export async function searchNPMeta(
     if (!subgraphUrls.length) throw new Error("expected subgraph URL(s)");
     return await Promise.any(subgraphUrls.map(v => _request(v)));
 }
-
-// searchNPMeta("0x5326842627bccd32bf1110a4481f0b6c61ba3ff81498b75686f74f3e37c2c06d", [...RAIN_SUBGRAPHS[80001]]).then(v => console.log(v));
