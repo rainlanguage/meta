@@ -7,33 +7,72 @@ import { isAddress, isBytesLike } from "./utils";
  * @public The query search result from subgraph for NP meta, explicitly designed for Dotrain usage
  */
 export type NPMetaSearchResult = {
-    __typename: string; 
-    rawBytes: string; 
+    __typename: "RainMetaV1"; 
+    id: string; 
+    sequence: {
+        id: string;
+        rawBytes: string;
+        magicNumber: bigint;
+    }[];
+    contracts: {  
+        id: string;
+        blockNumber: number;
+        deployedBytecode: string;
+        abimeta: string;
+    }[];
+} | {
+    __typename: "ContentMetaV1"; 
+    id: string; 
+    rawBytes: string;
     magicNumber: bigint; 
     contracts: {  
         id: string;
+        blockNumber: number;
         deployedBytecode: string;
         abimeta: string;
-    }[]
+    }[];
 }
 namespace NPMetaSearchResult {
     export function is(value: any): value is NPMetaSearchResult {
         return typeof value === "object"
             && value !== null
+            && typeof value.id === "string"
+            && isBytesLike(value.id)
+            && value.id.length === 66
             && typeof value.__typename === "string"
             && ( value.__typename === "RainMetaV1" || value.__typename === "ContentMetV1" )
-            && isBytesLike(value.rawBytes)
-            && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
+            && (
+                "sequence" in value
+                    ? (
+                        Array.isArray(value.sequence)
+                        && value.sequence.length > 0
+                        && value.sequence.every((v: any) => 
+                            typeof v.id === "string"
+                            && isBytesLike(v.id)
+                            && v.id.length === 66
+                            && isBytesLike(v.rawBytes)
+                            && MAGIC_NUMBERS.is(BigInt(v.magicNumber))
+                        )
+                    )
+                    : (
+                        isBytesLike(value.rawBytes)
+                        && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
+                    )
+            )
             && Array.isArray(value.contracts)
             && value.contracts.every((v: any) => typeof v === "object"
                 && v !== null
-                && "id" in v 
-                ? isAddress(v.id) 
-                    && isBytesLike(v.deployedBytecode) 
-                    && Array.isArray(v.meta)
-                    && v.meta.length === 1
-                    && isBytesLike(v.meta[0].rawBytes)
-                : true
+                && (
+                    "id" in v 
+                        ? (
+                            isAddress(v.id) 
+                            && isBytesLike(v.deployedBytecode) 
+                            && Array.isArray(v.meta)
+                            && v.meta.length === 1
+                            && isBytesLike(v.meta[0].rawBytes)
+                        )
+                        : true
+                )
             );
     }
 }
@@ -48,16 +87,34 @@ export const getNPQuery = (metaHash: string): string => {
         return `{ 
     meta( id: "${ metaHash.toLowerCase() }" ) { 
         __typename 
-        rawBytes 
-        magicNumber 
+        id
+        ... on RainMetaV1 {
+            sequence(
+                where: {or: [ 
+                    {magicNumber: "18429323134567717275"},
+                    {magicNumber: "18440520426328744501"} 
+                ]}
+            ) {
+                id
+                rawBytes
+                magicNumber
+            }
+        }
+        ... on ContentMetaV1 {
+            rawBytes 
+            magicNumber 
+        }
         contracts { 
             ... on ExpressionDeployer { 
                 id
                 deployedBytecode
+                deployTransaction {
+                    blockNumber
+                }
                 meta(where: { magicNumber: "18439425400648969438" }) {
                     rawBytes
                 }
-            } 
+            }
         } 
     } 
 }`;
@@ -91,7 +148,14 @@ export async function searchNPMeta(
                 _res.contracts.forEach((v: any) => {
                     v.abimeta = v.meta[0].rawBytes;
                     delete v.meta;
+                    v.blockNumber = Number(v.deployTransaction.blockNumber);
+                    delete v.deployTransaction;
                 });
+                _res.contracts.sort((a, b) => b.blockNumber - a.blockNumber);
+                if (_res.__typename === "RainMetaV1") _res.sequence.forEach(v => {
+                    v.magicNumber = BigInt(v.magicNumber);
+                });
+                else _res.magicNumber === BigInt(_res.magicNumber);
                 return Promise.resolve(_res);
             }
             else return Promise.reject(new Error("unexpected returned value"));
@@ -104,3 +168,5 @@ export async function searchNPMeta(
     if (!subgraphUrls.length) throw new Error("expected subgraph URL(s)");
     return await Promise.any(subgraphUrls.map(v => _request(v)));
 }
+
+// searchNPMeta("0x5326842627bccd32bf1110a4481f0b6c61ba3ff81498b75686f74f3e37c2c06d", [...RAIN_SUBGRAPHS[80001]]).then(v => console.log(v));
