@@ -16,7 +16,7 @@ export type NPMetaSearchResult = {
     }[];
     contracts: {  
         id: string;
-        blockNumber: number;
+        timestamp: number;
         deployedBytecode: string;
         abimeta: string;
     }[];
@@ -27,55 +27,54 @@ export type NPMetaSearchResult = {
     magicNumber: bigint; 
     contracts: {  
         id: string;
-        blockNumber: number;
+        timestamp: number;
         deployedBytecode: string;
         abimeta: string;
     }[];
 }
-namespace NPMetaSearchResult {
-    export function is(value: any): value is NPMetaSearchResult {
-        return typeof value === "object"
-            && value !== null
-            && typeof value.id === "string"
-            && isBytesLike(value.id)
-            && value.id.length === 66
-            && typeof value.__typename === "string"
-            && ( value.__typename === "RainMetaV1" || value.__typename === "ContentMetV1" )
-            && (
-                "sequence" in value
-                    ? (
-                        Array.isArray(value.sequence)
-                        && value.sequence.length > 0
-                        && value.sequence.every((v: any) => 
-                            typeof v.id === "string"
-                            && isBytesLike(v.id)
-                            && v.id.length === 66
-                            && isBytesLike(v.payload)
-                            && MAGIC_NUMBERS.is(BigInt(v.magicNumber))
-                        )
+
+function isValidResult(value: any): value is NPMetaSearchResult {
+    return typeof value === "object"
+        && value !== null
+        && typeof value.id === "string"
+        && isBytesLike(value.id)
+        && value.id.length === 66
+        && typeof value.__typename === "string"
+        && ( value.__typename === "RainMetaV1" || value.__typename === "ContentMetV1" )
+        && (
+            "sequence" in value
+                ? (
+                    Array.isArray(value.sequence)
+                    && value.sequence.length > 0
+                    && value.sequence.every((v: any) => 
+                        typeof v.id === "string"
+                        && isBytesLike(v.id)
+                        && v.id.length === 66
+                        && isBytesLike(v.payload)
+                        && MAGIC_NUMBERS.is(BigInt(v.magicNumber))
                     )
-                    : (
-                        isBytesLike(value.payload)
-                        && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
-                    )
-            )
-            && Array.isArray(value.contracts)
-            && value.contracts.length > 0
-            && value.contracts.every((v: any) => typeof v === "object"
-                && v !== null
-                && (
-                    "id" in v 
-                        ? (
-                            isAddress(v.id) 
-                            && isBytesLike(v.deployedBytecode) 
-                            && Array.isArray(v.meta)
-                            && v.meta.length === 1
-                            && isBytesLike(v.meta[0].payload)
-                        )
-                        : true
                 )
-            );
-    }
+                : (
+                    isBytesLike(value.payload)
+                    && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
+                )
+        )
+        && Array.isArray(value.contracts)
+        && value.contracts.length > 0
+        && value.contracts.every((v: any) => typeof v === "object"
+            && v !== null
+            && (
+                "id" in v 
+                    ? (
+                        isAddress(v.id) 
+                        && isBytesLike(v.deployedBytecode) 
+                        && Array.isArray(v.meta)
+                        && v.meta.length === 1
+                        && isBytesLike(v.meta[0].payload)
+                    )
+                    : true
+            )
+        );
 }
 
 /**
@@ -110,7 +109,7 @@ export const getNPQuery = (metaHash: string): string => {
                 id
                 deployedBytecode
                 deployTransaction {
-                    blockNumber
+                    timestamp
                 }
                 meta(where: { magicNumber: "18439425400648969438" }) {
                     payload
@@ -144,15 +143,15 @@ export async function searchNPMeta(
                 url, { headers: { "Content-Type":"application/json" }, timeout }
             ).request(_query) as any)?.meta;
             if (!_res) Promise.reject(new Error("no matching record was found"));
-            if (NPMetaSearchResult.is(_res)) {
+            if (isValidResult(_res)) {
                 _res.contracts = _res.contracts.filter(v => "id" in v);
                 _res.contracts.forEach((v: any) => {
                     v.abimeta = v.meta[0].payload;
                     delete v.meta;
-                    v.blockNumber = Number(v.deployTransaction.blockNumber);
+                    v.timestamp = Number(v.deployTransaction.timestamp);
                     delete v.deployTransaction;
                 });
-                _res.contracts.sort((a, b) => b.blockNumber - a.blockNumber);
+                // _res.contracts.sort((a, b) => b.timestamp - a.timestamp);
                 if (_res.__typename === "RainMetaV1") _res.sequence.forEach(v => {
                     v.magicNumber = BigInt(v.magicNumber);
                 });
@@ -167,5 +166,24 @@ export async function searchNPMeta(
     };
 
     if (!subgraphUrls.length) throw new Error("expected subgraph URL(s)");
-    return await Promise.any(subgraphUrls.map(v => _request(v)));
+    const _allResults: NPMetaSearchResult[] = (await Promise.allSettled(
+        subgraphUrls.map(v => _request(v))
+    )).filter(
+        v => v.status === "fulfilled"
+    ).map(
+        v => (v as PromiseFulfilledResult<NPMetaSearchResult>).value
+    );
+    if (!_allResults.length) return Promise.reject("no matching record was found");
+    else {
+        const _mergedResult = _allResults.shift()!;
+        _allResults.forEach(v => {
+            v.contracts.forEach(e => {
+                if (!_mergedResult.contracts.find(i => i.id === e.id)) {
+                    _mergedResult.contracts.push(e);
+                }
+            });
+        });
+        _mergedResult.contracts.sort((a, b) => b.timestamp - a.timestamp);
+        return _mergedResult;
+    }
 }

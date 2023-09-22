@@ -5,7 +5,7 @@ export const ChainId = {
     ETHEREUM          : 1,
     ROPSTEN           : 3,
     RINKEBY           : 4,
-    GÖRLI             : 5,
+    GOERLI            : 5,
     SEPOLIA           : 11155111,
     KOVAN             : 42,
     POLYGON           : 137,
@@ -41,9 +41,22 @@ export const ChainId = {
     BOBA_BNB          : 56288,
     BTTC              : 199,
     THUNDERCORE       : 108,
+    POA_SOKOL         : 77,
+    POA_CORE          : 99,
+    ZKSYNC_TESTNET    : 280,
+    ZKSYNC_ERA        : 324,
+    OPTIMISM_GOERLI   : 420,
+    CLOVER            : 1023,
+    MOONBASE_TESTNET  : 1287,
+    ARBITRUM_GOERLI   : 421613,
+    CELO_TESTNET      : 44787,
+    AURORA	          :	131316155,
+    AURORA_TESTNET	  : 1313161555,
+    BASE_TESTNET      : 84531,
+    BASE              : 8453,
+    SCROLL_SEPOLIA    : 534351
     // CONSENSUS_ZKEVM_TESTNET : 59140,
     // SCROLL_ALPHA_TESTNET    : 534353,
-    // BASE_TESTNET            : 84531,
     // FILECOIN                : 314,
 } as const;
 export type ChainId = (typeof ChainId)[keyof typeof ChainId];
@@ -64,7 +77,7 @@ export const ChainKey = {
     [ChainId.FANTOM]            : "fantom",
     [ChainId.FANTOM_TESTNET]    : "fantom-testnet",
     [ChainId.FUSE]              : "fuse",
-    [ChainId.GÖRLI]             : "goerli",
+    [ChainId.GOERLI]            : "goerli",
     [ChainId.HARMONY]           : "harmony",
     [ChainId.HARMONY_TESTNET]   : "harmony-testnet",
     [ChainId.HECO]              : "heco",
@@ -93,9 +106,62 @@ export const ChainKey = {
     [ChainId.BTTC]              : "bttc",
     [ChainId.THUNDERCORE]       : "thundercore",
     [ChainId.SEPOLIA]           : "sepolia",
+    [ChainId.AURORA]	        : "aurora",
+    [ChainId.AURORA_TESTNET]	: "aurora-testnet",
+    [ChainId.BASE_TESTNET]      : "base-testnet",
+    [ChainId.BASE]              : "base"
     // [ChainId.CONSENSUS_ZKEVM_TESTNET]   : "consensus-zkevm-testnet",
     // [ChainId.SCROLL_ALPHA_TESTNET]      : "scroll-alpha-testnet",
-    // [ChainId.BASE_TESTNET]              :"base-testnet",
     // [ChainId.FILECOIN]                  : "filecoin",
 } as const;
 export type ChainKey = (typeof ChainKey)[keyof typeof ChainKey];
+
+/**
+ * @public names of the supported chains used by TheGraph Protocol
+ */
+export const TheGraphChainKeys = {
+    [ChainId.ETHEREUM]: "mainnet",
+    [ChainId.GOERLI]: "goerli",
+    [ChainId.OPTIMISM]: "optimism",
+    [ChainId.BSC]: "bsc",
+    [ChainId.BSC_TESTNET]: "chapel",
+    [ChainId.POA_SOKOL]: "poa-sokol",
+    [ChainId.POA_CORE]: "poa-core",
+    [ChainId.GNOSIS]: "gnosis",
+    [ChainId.FUSE]: "fuse",
+    [ChainId.POLYGON]: "matic",
+    [ChainId.FANTOM]: "fantom",
+    [ChainId.ZKSYNC_TESTNET]: "zksync2-testnet",
+    [ChainId.BOBA]: "boba",
+    [ChainId.OPTIMISM_GOERLI]: "optimism-goerli",
+    [ChainId.CLOVER]: "clover",
+    [ChainId.MOONBEAM]: "moonbeam",
+    [ChainId.MOONRIVER]: "moonriver",
+    [ChainId.MOONBASE_TESTNET]: "mbase",
+    [ChainId.FANTOM_TESTNET]: "fantom-testnet",
+    [ChainId.ARBITRUM]: "arbitrum-one",
+    [ChainId.ARBITRUM_GOERLI]: "arbitrum-goerli",
+    [ChainId.CELO]: "celo",
+    [ChainId.AVALANCHE_TESTNET]: "fuji",
+    [ChainId.AVALANCHE]: "avalanche",
+    [ChainId.CELO_TESTNET]: "celo-alfajores",
+    [ChainId.POLYGON_TESTNET]: "mumbai",
+    [ChainId.AURORA]: "aurora",
+    [ChainId.AURORA_TESTNET]: "aurora-testnet",
+    [ChainId.HARMONY]: "harmony",
+    [ChainId.BASE_TESTNET]: "base-testnet",
+    [ChainId.POLYGON_ZKEVM]: "polygon-zkevm",
+    [ChainId.ZKSYNC_ERA]: "zksync-era",
+    [ChainId.SEPOLIA]: "sepolia",
+    [ChainId.BASE]: "base",
+    [ChainId.SCROLL_SEPOLIA]: "scroll-sepolia"
+} as const;
+export type TheGraphChainKeys = (typeof TheGraphChainKeys)[keyof typeof TheGraphChainKeys];
+	
+// NEAR	            near-mainnet	    1	
+// NEAR	            near-testnet	    2	
+// Cosmos	            cosmoshub-4	        1	
+// Cosmos Hub	        theta-testnet-001	2	
+// Osmosis	            osmosis-1	        1	
+// Osmosis	            osmo-test-4	        2	
+// Arweave	            arweave-mainnet 	1	

@@ -2,6 +2,13 @@ import { ChainId } from "./chains";
 
 
 /**
+ * @public The graph protcol endpoint for querying about deployed subgraphs
+ * Schema of this subgraph can be found here:
+ * https://github.com/graphprotocol/graph-node/blob/master/server/index-node/src/schema.graphql
+ */
+export const STATUS_SUBGRAPH = "https://api.thegraph.com/index-node/graphql" as const;
+
+/**
  * @public Known Rain subgraph endpoints paired with EVM chain ids
  */
 export const RAIN_SUBGRAPHS = {
