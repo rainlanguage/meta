@@ -786,7 +786,10 @@ export const toContractMeta = (meta: string): ContractMeta => {
 * @returns An array with the decoded data.
 */
 export const cborDecode = (dataEncoded_: string): Array<any> => {
-    return decodeAllSync(dataEncoded_);
+    return decodeAllSync(dataEncoded_.startsWith("0x")
+        ? dataEncoded_.slice(2)
+        : dataEncoded_
+    );
 };
 
 /**

@@ -1,5 +1,7 @@
 import { AbiMeta } from "./types/abi";
+import { MAGIC_NUMBERS } from "./magicNumbers";
 import { ContractMeta } from "./types/contract";
+import { RAIN_SUBGRAPHS } from "./rainSubgraphs";
 import { AuthoringMeta } from "./types/authoring";
 import { NPMetaSearchResult, searchNPMeta } from "./getNpMeta";
 
@@ -9,9 +11,26 @@ import { NPMetaSearchResult, searchNPMeta } from "./getNpMeta";
  */
 export namespace RainMeta {
 
+    /**
+     * @public This namespace provides ABI meta functionalities
+     */
     export import Abi = AbiMeta;
+    /**
+     * @public This namespace provides Contract meta functionalities
+     */
     export import Contract = ContractMeta;
+    /**
+     * @public This namespace provides Authoring meta functionalities
+     */
     export import Authoring = AuthoringMeta;
+    /**
+     * @public This namespace provides every functionality of Magic Numbers
+     */
+    export import MagicNumbers = MAGIC_NUMBERS;
+    /**
+     * @public This namespace provides every functionality of Rain subgraphs
+     */
+    export const KnownSubgraphs = RAIN_SUBGRAPHS;
 
     /**
      * @public Checks if a value is valid Rain meta

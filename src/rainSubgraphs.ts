@@ -12,7 +12,11 @@ export const STATUS_SUBGRAPH = "https://api.thegraph.com/index-node/graphql" as 
  * @public Known Rain subgraph endpoints paired with EVM chain ids
  */
 export const RAIN_SUBGRAPHS = {
-    is: (value: any): value is string => {
+    /**
+     * @public Method to check if a given URL is a known Rain subgraph
+     * @param value - The value to check
+     */
+    is: (value: any): boolean => {
         return typeof value === "string"
             && value.length > 0
             && Object.entries(
@@ -23,14 +27,24 @@ export const RAIN_SUBGRAPHS = {
                 v => (v[1] as any).includes(value)
             );
     },
+
+    /**
+     * @public Ethereum mainnnet known Rain subgraphs
+     */
     [ChainId.ETHEREUM]: [
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-ethereum",
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np-eth"
     ],
+    /**
+     * @public Polygon known Rain subgraphs
+     */
     [ChainId.POLYGON]: [
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-polygon",
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np-matic"
     ],
+    /**
+     * @public Mumbai (Polygon testnet) known Rain subgraphs
+     */
     [ChainId.POLYGON_TESTNET]: [
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry",
         "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np"

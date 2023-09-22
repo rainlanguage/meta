@@ -22,13 +22,17 @@ export namespace MAGIC_NUMBERS {
      */
     export const CONTRACT_META_V1 = 18429323134567717275n as const;
     /**
-     * Dotrain meta "0xffdac2f2f37be894"
+     * Dotrain "0xffdac2f2f37be894"
      */
     export const DOTRAIN = 18436262373317404820n as const;
     /**
      * Authroing meta "0xffe9e3a02ca8e235"
      */
     export const AUTHORING_META_V1 = 18440520426328744501n as const;
+    /**
+     * Rainlang "0xff1c198cec3b48a7"
+     */
+    export const RAINLANG = 18382595872068946087n as const;
 
     /**
      * @public Method to check if a value is of valid Rain Magic numbers
@@ -42,7 +46,8 @@ export namespace MAGIC_NUMBERS {
             MAGIC_NUMBERS.OPS_META_V1           === value ||
             MAGIC_NUMBERS.RAIN_META_DOCUMENT    === value ||
             MAGIC_NUMBERS.SOLIDITY_ABIV2        === value ||
-            MAGIC_NUMBERS.AUTHORING_META_V1     === value
+            MAGIC_NUMBERS.AUTHORING_META_V1     === value ||
+            MAGIC_NUMBERS.RAINLANG              === value
         );
     }
 }

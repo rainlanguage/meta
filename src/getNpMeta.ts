@@ -33,6 +33,9 @@ export type NPMetaSearchResult = {
     }[];
 }
 
+/**
+ * @internal Method to check the returned value from sg
+ */
 function isValidResult(value: any): value is NPMetaSearchResult {
     return typeof value === "object"
         && value !== null
@@ -89,12 +92,7 @@ export const getNPQuery = (metaHash: string): string => {
         __typename 
         id
         ... on RainMetaV1 {
-            sequence(
-                where: {or: [ 
-                    {magicNumber: "18429323134567717275"},
-                    {magicNumber: "18440520426328744501"} 
-                ]}
-            ) {
+            sequence {
                 id
                 payload
                 magicNumber
