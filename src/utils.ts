@@ -859,6 +859,15 @@ export const cborEncode = (
 };
 
 /**
+ * @public CBOR encode given a map object
+ * @param map - The cbor map
+ * @returns The data encoded with CBOR as an hex string.
+ */
+export const cborMapEncode = (map: Map<number, any>): string => {
+    return encodeCanonical(map).toString("hex").toLowerCase();
+};
+
+/**
  * @public Calculates the hash for a given meta
  * @param metaBytes - The meta bytes to get the hash from
  * @param magicNumbers - The magic number associated with the metaBytes
