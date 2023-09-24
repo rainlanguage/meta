@@ -16,6 +16,11 @@ export type DeployerMeta = [
         id: string; 
         rawBytes: string;
         magicNumber: bigint; 
+    },
+    {
+        id: string; 
+        rawBytes: string;
+        magicNumber: bigint; 
     }
 ]
 
@@ -23,14 +28,16 @@ export type DeployerMeta = [
  * @internal Method to check the returned value from sg for deployer meta
  */
 function isValidResult(value: any): value is DeployerMeta {
-    if (Array.isArray(value) && value.length > 1) {
+    if (Array.isArray(value) && value.length > 2) {
         let hasAbi = false;
         let hasAuthroing = false;
+        let hasConstructor = false;
         value.forEach(v => {
             if (BigInt(v.magicNumber) === MAGIC_NUMBERS.SOLIDITY_ABIV2) hasAbi = true;
             if (BigInt(v.magicNumber) === MAGIC_NUMBERS.AUTHORING_META_V1) hasAuthroing = true;
+            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.RAIN_META_DOCUMENT) hasConstructor = true;
         });
-        if (hasAbi && hasAuthroing) return value.every(v => {
+        if (hasAbi && hasAuthroing && hasConstructor) return value.every(v => {
             typeof v === "object"
                 && v !== null
                 && typeof v.id === "string"
@@ -99,25 +106,25 @@ export async function searchNPMeta(
 
 /**
  * @public 
- * Searches through multiple subgraphs to find the first matching expression deployer meta from bytecode hash
+ * Searches through multiple subgraphs to find the first matching expression deployer meta from bytecode/constructor hash
  * 
- * @param bytecodeHash - The bytecode hash to search for
+ * @param hash - The bytecode or constructor hash to search for
  * @param subgraphUrls - Subgraph urls to query from
  * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
  * @returns A promise that resolves with array of meta bytes as hex string and rejects if nothing found
  */
 export async function searchNPDeployerMeta(
-    bytecodeHash: string,
+    hash: string,
     subgraphUrls: string[],
     timeout = 5000
 ): Promise<DeployerMeta> {
-    if (!bytecodeHash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
+    if (!hash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
     const _query = `{
     expressionDeployers(
-        where: {meta_: {id: "${ bytecodeHash.toLowerCase() }"}}
+        where: {meta_: {id: "${ hash.toLowerCase() }"}}
         first: 1
     ) {
-        meta(where: {or: [{magicNumber: "18440520426328744501"}, {magicNumber: "18439425400648969438"}]}) {
+        meta(where: { magicNumber_not: "18436497220406627634" }) {
             id
             rawBytes
             magicNumber
@@ -134,6 +141,7 @@ export async function searchNPDeployerMeta(
                 const result: DeployerMeta = [] as any;
                 let abi = false;
                 let authoring = false;
+                let constructor = false;
                 _res.expressionDeployers[0].forEach(v => {
                     const mn = BigInt(v.magicNumber);
                     if (!abi && mn === MAGIC_NUMBERS.SOLIDITY_ABIV2) {
@@ -152,8 +160,16 @@ export async function searchNPDeployerMeta(
                         });
                         authoring = true;
                     }
+                    if (!constructor && mn === MAGIC_NUMBERS.RAIN_META_DOCUMENT) {
+                        result.push({
+                            id: v.id,
+                            rawBytes: v.rawBytes,
+                            magicNumber: mn
+                        });
+                        constructor = true;
+                    }
                 });
-                if (result.length === 2) return Promise.resolve(result);
+                if (result.length === 3) return Promise.resolve(result);
                 else return Promise.reject(new Error("unexpected returned value"));
             }
             else return Promise.reject(new Error("unexpected returned value"));

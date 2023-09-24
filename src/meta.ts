@@ -84,17 +84,17 @@ export namespace RainMeta {
     }
 
     /**
-     * @public Method to get NP deployer meta from provided subgraphs
-     * @param bytecodeHash - The meta hash to search for
+     * @public Method to get expression deployer meta from provided subgraphs
+     * @param hash - The bytecode or constructor hash to search for
      * @param subgraphUrls - Subgraph urls to query from
      * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
      * @returns A promise that resolves with ABI meta bytes as hex string and rejects if nothing found
      */
     export async function getDeployerMeta(
-        bytecodeHash: string,
+        hash: string,
         subgraphUrls: string[],
         timeout = 5000
     ): Promise<DeployerMeta> {
-        return searchNPDeployerMeta(bytecodeHash, subgraphUrls, timeout);
+        return searchNPDeployerMeta(hash, subgraphUrls, timeout);
     }
 }
