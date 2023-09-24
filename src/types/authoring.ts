@@ -1,7 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import { arrayify, defaultAbiCoder, metaFromBytes } from "../utils";
+import { arrayify, defaultAbiCoder, decodeCborMap } from "../utils";
 
 
 const WordPattern = /^[a-z][0-9a-z-]*$/;
@@ -59,10 +59,11 @@ export namespace AuthoringMeta {
     }
 
     /**
-     * @public Method to get array of AuthoringMeta object from raw bytes
+     * @public Method to get array of AuthoringMeta object from cbor map
      */
-    export function fromBytes(value: any): AuthoringMeta[] {
-        const abiEncodedBytes = metaFromBytes(value, "cbor");
+    export function get(map: Map<any, any>): AuthoringMeta[] {
+        const abiEncodedBytes = decodeCborMap(map);
+        if (typeof abiEncodedBytes === "string") throw new Error("corrupt Authoring meta");
         const authoringMeta = defaultAbiCoder.decode(
             [ Struct ], 
             abiEncodedBytes
@@ -77,6 +78,6 @@ export namespace AuthoringMeta {
             };
         });
         if (AuthoringMeta.isArray(authoringMeta)) return authoringMeta;
-        else throw "invalid Authoring meta";
+        else throw new Error("invalid Authoring meta");
     }
 }

@@ -1,83 +1,49 @@
 import { MAGIC_NUMBERS } from "./magicNumbers";
+import { isBytesLike } from "./utils";
 import { GraphQLClient } from "graphql-request";
-import { isAddress, isBytesLike } from "./utils";
 
 
 /**
  * @public The query search result from subgraph for NP meta, explicitly designed for Dotrain usage
  */
-export type NPMetaSearchResult = {
-    __typename: "RainMetaV1"; 
-    id: string; 
-    sequence: {
-        id: string;
-        payload: string;
-        magicNumber: bigint;
-    }[];
-    contracts: {  
-        id: string;
-        timestamp: number;
-        deployedBytecode: string;
-        abimeta: string;
-    }[];
-} | {
-    __typename: "ContentMetaV1"; 
-    id: string; 
-    payload: string;
-    magicNumber: bigint; 
-    contracts: {  
-        id: string;
-        timestamp: number;
-        deployedBytecode: string;
-        abimeta: string;
-    }[];
-}
+export type DeployerMeta = [
+    {
+        id: string; 
+        rawBytes: string;
+        magicNumber: bigint; 
+    }, 
+    {
+        id: string; 
+        rawBytes: string;
+        magicNumber: bigint; 
+    }
+]
 
 /**
- * @internal Method to check the returned value from sg
+ * @internal Method to check the returned value from sg for deployer meta
  */
-function isValidResult(value: any): value is NPMetaSearchResult {
-    return typeof value === "object"
-        && value !== null
-        && typeof value.id === "string"
-        && isBytesLike(value.id)
-        && value.id.length === 66
-        && typeof value.__typename === "string"
-        && ( value.__typename === "RainMetaV1" || value.__typename === "ContentMetV1" )
-        && (
-            "sequence" in value
-                ? (
-                    Array.isArray(value.sequence)
-                    && value.sequence.length > 0
-                    && value.sequence.every((v: any) => 
-                        typeof v.id === "string"
-                        && isBytesLike(v.id)
-                        && v.id.length === 66
-                        && isBytesLike(v.payload)
-                        && MAGIC_NUMBERS.is(BigInt(v.magicNumber))
-                    )
-                )
-                : (
-                    isBytesLike(value.payload)
-                    && MAGIC_NUMBERS.is(BigInt(value.magicNumber))
-                )
-        )
-        && Array.isArray(value.contracts)
-        && value.contracts.length > 0
-        && value.contracts.every((v: any) => typeof v === "object"
-            && v !== null
-            && (
-                "id" in v 
-                    ? (
-                        isAddress(v.id) 
-                        && isBytesLike(v.deployedBytecode) 
-                        && Array.isArray(v.meta)
-                        && v.meta.length === 1
-                        && isBytesLike(v.meta[0].payload)
-                    )
-                    : true
-            )
-        );
+function isValidResult(value: any): value is DeployerMeta {
+    if (Array.isArray(value) && value.length > 1) {
+        let hasAbi = false;
+        let hasAuthroing = false;
+        value.forEach(v => {
+            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.SOLIDITY_ABIV2) hasAbi = true;
+            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.AUTHORING_META_V1) hasAuthroing = true;
+        });
+        if (hasAbi && hasAuthroing) return value.every(v => {
+            typeof v === "object"
+                && v !== null
+                && typeof v.id === "string"
+                && isBytesLike(v.id)
+                && v.id.length === 66
+                && typeof v.rawBytes === "string"
+                && isBytesLike(v.rawBytes)
+                && typeof v.magicNumber === "string"
+                && MAGIC_NUMBERS.is(BigInt(v.magicNumber));
+        });
+        else return false;
+    }
+    else return false;
 }
 
 /**
@@ -89,31 +55,7 @@ export const getNPQuery = (metaHash: string): string => {
     if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
         return `{ 
     meta( id: "${ metaHash.toLowerCase() }" ) { 
-        __typename 
-        id
-        ... on RainMetaV1 {
-            sequence {
-                id
-                payload
-                magicNumber
-            }
-        }
-        ... on ContentMetaV1 {
-            payload 
-            magicNumber 
-        }
-        contracts { 
-            ... on ExpressionDeployer { 
-                id
-                deployedBytecode
-                deployTransaction {
-                    timestamp
-                }
-                meta(where: { magicNumber: "18439425400648969438" }) {
-                    payload
-                }
-            }
-        } 
+        rawBytes
     } 
 }`;
     }
@@ -133,28 +75,16 @@ export async function searchNPMeta(
     metaHash: string,
     subgraphUrls: string[],
     timeout = 5000
-): Promise<NPMetaSearchResult> {
+): Promise<string> {
     const _query = getNPQuery(metaHash);
-    const _request = async(url: string): Promise<NPMetaSearchResult> => {
+    const _request = async(url: string): Promise<string> => {
         try {
-            const _res = (await new GraphQLClient(
+            const _res = await new GraphQLClient(
                 url, { headers: { "Content-Type":"application/json" }, timeout }
-            ).request(_query) as any)?.meta;
+            ).request(_query) as any;
             if (!_res) Promise.reject(new Error("no matching record was found"));
-            if (isValidResult(_res)) {
-                _res.contracts = _res.contracts.filter(v => "id" in v);
-                _res.contracts.forEach((v: any) => {
-                    v.abimeta = v.meta[0].payload;
-                    delete v.meta;
-                    v.timestamp = Number(v.deployTransaction.timestamp);
-                    delete v.deployTransaction;
-                });
-                // _res.contracts.sort((a, b) => b.timestamp - a.timestamp);
-                if (_res.__typename === "RainMetaV1") _res.sequence.forEach(v => {
-                    v.magicNumber = BigInt(v.magicNumber);
-                });
-                else _res.magicNumber === BigInt(_res.magicNumber);
-                return Promise.resolve(_res);
+            if (isBytesLike(_res?.meta?.rawBytes)) {
+                return Promise.resolve(_res.meta.rawBytes);
             }
             else return Promise.reject(new Error("unexpected returned value"));
         }
@@ -164,24 +94,75 @@ export async function searchNPMeta(
     };
 
     if (!subgraphUrls.length) throw new Error("expected subgraph URL(s)");
-    const _allResults: NPMetaSearchResult[] = (await Promise.allSettled(
-        subgraphUrls.map(v => _request(v))
-    )).filter(
-        v => v.status === "fulfilled"
-    ).map(
-        v => (v as PromiseFulfilledResult<NPMetaSearchResult>).value
-    );
-    if (!_allResults.length) return Promise.reject("no matching record was found");
-    else {
-        const _mergedResult = _allResults.shift()!;
-        _allResults.forEach(v => {
-            v.contracts.forEach(e => {
-                if (!_mergedResult.contracts.find(i => i.id === e.id)) {
-                    _mergedResult.contracts.push(e);
-                }
-            });
-        });
-        _mergedResult.contracts.sort((a, b) => b.timestamp - a.timestamp);
-        return _mergedResult;
+    return await Promise.any(subgraphUrls.map(v => _request(v)));
+}
+
+/**
+ * @public 
+ * Searches through multiple subgraphs to find the first matching expression deployer meta from bytecode hash
+ * 
+ * @param bytecodeHash - The bytecode hash to search for
+ * @param subgraphUrls - Subgraph urls to query from
+ * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
+ * @returns A promise that resolves with array of meta bytes as hex string and rejects if nothing found
+ */
+export async function searchNPDeployerMeta(
+    bytecodeHash: string,
+    subgraphUrls: string[],
+    timeout = 5000
+): Promise<DeployerMeta> {
+    if (!bytecodeHash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
+    const _query = `{
+    expressionDeployers(
+        where: {meta_: {id: "${ bytecodeHash.toLowerCase() }"}}
+        first: 1
+    ) {
+        meta(where: {or: [{magicNumber: "18440520426328744501"}, {magicNumber: "18439425400648969438"}]}) {
+            id
+            rawBytes
+            magicNumber
+        }
     }
+}`;
+    const _request = async(url: string): Promise<DeployerMeta> => {
+        try {
+            const _res = await new GraphQLClient(
+                url, { headers: { "Content-Type":"application/json" }, timeout }
+            ).request(_query) as any;
+            if (!_res) Promise.reject(new Error("no matching record was found"));
+            if (isValidResult(_res?.expressionDeployers[0])) {
+                const result: DeployerMeta = [] as any;
+                let abi = false;
+                let authoring = false;
+                _res.expressionDeployers[0].forEach(v => {
+                    const mn = BigInt(v.magicNumber);
+                    if (!abi && mn === MAGIC_NUMBERS.SOLIDITY_ABIV2) {
+                        result.push({
+                            id: v.id,
+                            rawBytes: v.rawBytes,
+                            magicNumber: mn
+                        });
+                        abi = true;
+                    }
+                    if (!authoring && mn === MAGIC_NUMBERS.AUTHORING_META_V1) {
+                        result.push({
+                            id: v.id,
+                            rawBytes: v.rawBytes,
+                            magicNumber: mn
+                        });
+                        authoring = true;
+                    }
+                });
+                if (result.length === 2) return Promise.resolve(result);
+                else return Promise.reject(new Error("unexpected returned value"));
+            }
+            else return Promise.reject(new Error("unexpected returned value"));
+        }
+        catch (error) {
+            return Promise.reject(error);
+        }
+    };
+
+    if (!subgraphUrls.length) throw new Error("expected subgraph URL(s)");
+    return await Promise.any(subgraphUrls.map(v => _request(v)));
 }

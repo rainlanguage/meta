@@ -2,7 +2,7 @@
 // version 0.0.0
 
 import Ajv, { ValidateFunction } from "ajv";
-import { metaFromBytes, toContractMeta } from "../utils";
+import { decodeCborMap, toContractMeta } from "../utils";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -149,10 +149,13 @@ export namespace ContractMeta {
     }
 
     /**
-     * @public Method to get ContractMeta object from raw bytes
+     * @public Method to get ContractMeta object from cbor map
+     * @param map - The cbor map
      */
-    export function fromBytes(value: any): ContractMeta {
-        return toContractMeta(metaFromBytes(value));
+    export function get(map: Map<any, any>): ContractMeta {
+        const contractMetaStr = decodeCborMap(map);
+        if (typeof contractMetaStr !== "string") throw new Error("corrupt contract meta");
+        return toContractMeta(contractMetaStr);
     }
 }
 

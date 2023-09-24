@@ -65,7 +65,11 @@ export const {
     /**
      * @public ethers default encoder
      */
-    defaultAbiCoder
+    defaultAbiCoder,
+    /**
+     * @public ethers interface
+     */
+    Interface
 } = utils;
 
 /**
@@ -644,6 +648,7 @@ export const validateMetaBySchema = (
 };
 
 /**
+ * @deprecated
  * @public
  * Method to compress and generate deployable bytes for op meta
  *
@@ -653,6 +658,7 @@ export const validateMetaBySchema = (
 export function bytesFromMeta(opMeta: OpMeta[]): string
 
 /**
+ * @deprecated
  * @public
  * Method to compress and generate deployable bytes for contract meta
  *
@@ -662,6 +668,7 @@ export function bytesFromMeta(opMeta: OpMeta[]): string
 export function bytesFromMeta(contractMeta: ContractMeta): string
 
 /**
+ * @deprecated
  * @public
  * Method to compress and generate deployable bytes for Authoring meta
  *
@@ -680,6 +687,7 @@ export function bytesFromMeta(authoringMeta: AuthoringMeta[]): string
 export function bytesFromMeta(abiMeta: AbiMeta): string
 
 /**
+ * @deprecated
  * @public
  * Method to compress and generate deployable bytes for any meta as string
  *
@@ -718,6 +726,7 @@ export function bytesFromMeta(
 }
 
 /**
+ * @deprecated
  * @public
  * Decompress and convert bytes to meta as string
  *
@@ -750,6 +759,56 @@ export const metaFromBytes = (bytes: BytesLike, encoding: "json" | "cbor" = "jso
             };
         }
     }
+};
+
+/**
+ * @public Decodes a cbor map payload based on the map
+ * @param cbormap - The CBOR map instance
+ * @returns The result as string or Uint8Array
+ */
+export const decodeCborMap = (cbormap: Map<any, any>): Uint8Array | string => {
+    const knwonContentTypes = [
+        "application/json", 
+        "application/cbor", 
+        "application/octet-stream", 
+        "text/plain"
+    ];
+    const knownContentEncodings = [ "deflate" ];
+
+    const payload = cbormap.get(0);
+    const magicNumber = cbormap.get(1);
+    const contentType = cbormap.get(2);
+    const contentEncoding = cbormap.get(3);
+    // const contentLanguage = cbormap.get(4);
+    if (!payload) throw new Error("undefined payload");
+    if (!MAGIC_NUMBERS.is(magicNumber)) throw new Error("unknown magic number");
+    if (!contentType || !knwonContentTypes.includes(contentType)) throw new Error("unknown content type");
+    if (contentEncoding && !knownContentEncodings.includes(contentEncoding)) throw new Error("unknown content encoding");
+
+    const config: any = { raw: false };
+    if (contentType === "application/json") config.to = "string";
+
+    let result: any = arrayify(payload, { allowMissingPrefix: true });
+    if (contentEncoding && contentEncoding === "deflate") {
+        try {
+            result = inflate(result, config);
+        }
+        catch (err1) {
+            config.raw = true;
+            try {
+                result = inflate(result, config);
+            }
+            catch (err2) {
+                throw {
+                    message: "could not inflate the payload",
+                    inflateTry: err1,
+                    rawInflateTry: err2
+                };
+            }
+        }
+    }
+    return result;
+
 };
 
 /**
@@ -868,6 +927,7 @@ export const cborMapEncode = (map: Map<number, any>): string => {
 };
 
 /**
+ * @deprecated
  * @public Calculates the hash for a given meta
  * @param metaBytes - The meta bytes to get the hash from
  * @param magicNumbers - The magic number associated with the metaBytes
@@ -896,6 +956,7 @@ export function getMetaHash(metaBytes: BytesLike[], magicNumbers: MAGIC_NUMBERS[
 }
 
 /**
+ * @deprecated
  * @public
  * Checks if the meta hash matches the meta bytes by regenrating the hash
  * 
@@ -908,6 +969,7 @@ export function checkMetaHash(
 ): boolean
 
 /**
+ * @deprecated
  * @public
  * Checks if meta hash matches the array of meta sequence by regenrating the hash
  * 
@@ -937,11 +999,13 @@ export function checkMetaHash(
 export function isMagicNumber(value: any): value is MAGIC_NUMBERS {
     return typeof value === "bigint"
         && (
-            MAGIC_NUMBERS.CONTRACT_META_V1      === value
-            || MAGIC_NUMBERS.DOTRAIN            === value
-            || MAGIC_NUMBERS.OPS_META_V1        === value
-            || MAGIC_NUMBERS.RAIN_META_DOCUMENT === value
-            || MAGIC_NUMBERS.SOLIDITY_ABIV2     === value
-            || MAGIC_NUMBERS.AUTHORING_META_V1  === value
+            MAGIC_NUMBERS.CONTRACT_META_V1                   === value ||
+            MAGIC_NUMBERS.DOTRAIN_V1                         === value ||
+            MAGIC_NUMBERS.OPS_META_V1                        === value ||
+            MAGIC_NUMBERS.RAIN_META_DOCUMENT                 === value ||
+            MAGIC_NUMBERS.SOLIDITY_ABIV2                     === value ||
+            MAGIC_NUMBERS.AUTHORING_META_V1                  === value ||
+            MAGIC_NUMBERS.RAINLANG_v1                        === value ||
+            MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1 === value
         );
 }

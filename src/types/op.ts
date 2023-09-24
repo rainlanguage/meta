@@ -2,7 +2,7 @@
 // version 0.0.0
 
 import Ajv, { ValidateFunction } from "ajv";
-import { metaFromBytes, toOpMeta } from "../utils";
+import { decodeCborMap, toOpMeta } from "../utils";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -103,10 +103,13 @@ export namespace OpMeta {
     }
 
     /**
-     * @public Method to get array of OpMeta object from raw bytes
+     * @public Method to get array of OpMeta object from cbor map
+     * @param map - The cbor map
      */
-    export function fromBytes(value: any): OpMeta[] {
-        return toOpMeta(metaFromBytes(value));
+    export function get(map: Map<any, any>): OpMeta[] {
+        const opmetaStr = decodeCborMap(map);
+        if (typeof opmetaStr !== "string") throw new Error("corrupt op meta");
+        return toOpMeta(opmetaStr);
     }
 }
 

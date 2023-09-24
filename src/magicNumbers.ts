@@ -24,7 +24,7 @@ export namespace MAGIC_NUMBERS {
     /**
      * Dotrain "0xffdac2f2f37be894"
      */
-    export const DOTRAIN = 18436262373317404820n as const;
+    export const DOTRAIN_V1 = 18436262373317404820n as const;
     /**
      * Authroing meta "0xffe9e3a02ca8e235"
      */
@@ -32,7 +32,11 @@ export namespace MAGIC_NUMBERS {
     /**
      * Rainlang "0xff1c198cec3b48a7"
      */
-    export const RAINLANG = 18382595872068946087n as const;
+    export const RAINLANG_v1 = 18382595872068946087n as const;
+    /**
+     * ExpressionDeployer deployed bytecode v1 "0xffdb988a8cd04d32"
+     */
+    export const EXPRESSION_DEPLOYER_V2_BYTECODE_V1 = 18436497220406627634n as const;
 
     /**
      * @public Method to check if a value is of valid Rain Magic numbers
@@ -41,13 +45,14 @@ export namespace MAGIC_NUMBERS {
     export function is(value: any): value is MAGIC_NUMBERS {
         return typeof value === "bigint"
         && (
-            MAGIC_NUMBERS.CONTRACT_META_V1      === value ||
-            MAGIC_NUMBERS.DOTRAIN               === value ||
-            MAGIC_NUMBERS.OPS_META_V1           === value ||
-            MAGIC_NUMBERS.RAIN_META_DOCUMENT    === value ||
-            MAGIC_NUMBERS.SOLIDITY_ABIV2        === value ||
-            MAGIC_NUMBERS.AUTHORING_META_V1     === value ||
-            MAGIC_NUMBERS.RAINLANG              === value
+            MAGIC_NUMBERS.CONTRACT_META_V1                   === value ||
+            MAGIC_NUMBERS.DOTRAIN_V1                         === value ||
+            MAGIC_NUMBERS.OPS_META_V1                        === value ||
+            MAGIC_NUMBERS.RAIN_META_DOCUMENT                 === value ||
+            MAGIC_NUMBERS.SOLIDITY_ABIV2                     === value ||
+            MAGIC_NUMBERS.AUTHORING_META_V1                  === value ||
+            MAGIC_NUMBERS.RAINLANG_v1                        === value ||
+            MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1 === value
         );
     }
 }
