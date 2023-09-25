@@ -1009,3 +1009,38 @@ export function isMagicNumber(value: any): value is MAGIC_NUMBERS {
             MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1 === value
         );
 }
+
+export function isRainCborMap(value: any): boolean {
+    if (
+        typeof value === "object"
+        && value !== null
+        && value.toString() === "[object Map]"
+    ) {
+        const knwonContentTypes = [
+            "application/json", 
+            "application/cbor", 
+            "application/octet-stream", 
+            "text/plain"
+        ];
+        const knownContentEncodings = [ "deflate" ];
+        try {
+            const payload = value?.get(0);
+            const magicNumber = value?.get(1);
+            const contentType = value?.get(2);
+            const contentEncoding = value?.get(3);
+            if (payload === undefined) return false;
+            if (magicNumber === undefined || !MAGIC_NUMBERS.is(magicNumber)) return false;
+            if (!contentType || !knwonContentTypes.includes(contentType)) return false;
+            if (
+                contentEncoding !== undefined && 
+                !knownContentEncodings.includes(contentEncoding)
+            ) return false;
+            arrayify(payload, { allowMissingPrefix: true });
+        }
+        catch {
+            return false;
+        }
+        return true;
+    }
+    else return false;
+}

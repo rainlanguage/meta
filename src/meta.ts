@@ -4,8 +4,8 @@ import { MAGIC_NUMBERS } from "./magicNumbers";
 import { ContractMeta } from "./types/contract";
 import { RAIN_SUBGRAPHS } from "./rainSubgraphs";
 import { AuthoringMeta } from "./types/authoring";
-import { cborDecode, decodeCborMap, hexlify, isBytesLike } from "./utils";
 import { DeployerMeta, searchNPDeployerMeta, searchNPMeta } from "./getNPMeta";
+import { cborDecode, decodeCborMap, hexlify, isBytesLike, isRainCborMap } from "./utils";
 
 
 /**
@@ -57,7 +57,14 @@ export namespace RainMeta {
         if (value.startsWith("0x" + MagicNumbers.RAIN_META_DOCUMENT.toString(16).toLowerCase())) {
             value = value.slice(18);
         }
-        return cborDecode(value);
+        const maps = cborDecode(value);
+        try {
+            if (maps.every(v => isRainCborMap(v))) return maps;
+            else throw new Error("corrupt meta");
+        }
+        catch {
+            throw new Error("corrupt meta");
+        }
     }
 
     /**
@@ -65,7 +72,8 @@ export namespace RainMeta {
      * @param map - The cbor map
      */
     export function decodeMap(map: Map<any, any>): Uint8Array | string {
-        return decodeCborMap(map);
+        if (isRainCborMap(map)) return decodeCborMap(map);
+        else throw new Error("corrupt meta");
     }
 
     /**
