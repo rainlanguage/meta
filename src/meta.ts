@@ -70,10 +70,14 @@ export namespace RainMeta {
     /**
      * @public Method that decodes a sinlge cbor map to its final value based on the map configs
      * @param map - The cbor map
+     * @param validate - If the map should be validated or not
      */
-    export function decodeMap(map: Map<any, any>): Uint8Array | string {
-        if (isRainCborMap(map)) return decodeCborMap(map);
-        else throw new Error("corrupt meta");
+    export function decodeMap(map: Map<any, any>, validate = false): Uint8Array | string {
+        if (validate) {
+            if (isRainCborMap(map)) return decodeCborMap(map);
+            else throw new Error("corrupt meta");
+        }
+        else return decodeCborMap(map);
     }
 
     /**
