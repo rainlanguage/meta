@@ -12,9 +12,10 @@
     "url": "https://github.com/rainprotocol/meta/issues"
   },
   "homepage": "https://github.com/rainprotocol/meta#readme",
-  "main": "./cjs.js",
-  "module": "./esm.js",
-  "browser": "./esm.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "browser": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "files": [
     "/src",
     "/dist",
