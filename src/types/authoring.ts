@@ -80,4 +80,26 @@ export namespace AuthoringMeta {
         if (AuthoringMeta.isArray(authoringMeta)) return authoringMeta;
         else throw new Error("invalid Authoring meta");
     }
+
+    /**
+     * @public Get array of authoring meta from abi encoded bytes
+     * @param data - the data
+     */
+    export function fromAbiEncoded(data: string): AuthoringMeta[] {
+        const authoringMeta = defaultAbiCoder.decode(
+            [ Struct ], 
+            data
+        )?.AuthoringMeta?.map((v: any) => {
+            return {
+                word: String.fromCharCode(
+                    ...arrayify(v.word, { allowMissingPrefix: true })
+                        .filter(v => v !== 0)
+                ),
+                description: v.description,
+                operandParserOffset: v.operandParserOffset
+            };
+        });
+        if (AuthoringMeta.isArray(authoringMeta)) return authoringMeta;
+        else throw new Error("invalid Authoring meta");
+    }
 }
