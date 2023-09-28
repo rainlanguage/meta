@@ -53,10 +53,13 @@ export namespace RainMeta {
         }
         if (!isBytesLike(value)) throw new Error("value must be bytes");
         if (typeof value !== "string") value = hexlify(value, { allowMissingPrefix: true }).toLowerCase();
-
+        console.log("yo");
         if (value.startsWith("0x" + MagicNumbers.RAIN_META_DOCUMENT.toString(16).toLowerCase())) {
+            console.log("uo");
             value = value.slice(18);
         }
+        console.log(value.startsWith("0x"));
+        value = value.slice(2);
         const maps = cborDecode(value);
         try {
             if (maps.every(v => isRainCborMap(v))) return maps;
