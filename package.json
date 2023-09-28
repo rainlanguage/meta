@@ -34,9 +34,8 @@
     "lint": "eslint \"src/**\"",
     "lint-fix": "eslint \"src/**\" --fix",
     "test": "echo \"there are no tests at the moment!\"",
-    "op-meta-schema": "node ./scripts/genMetaSchema.js --op",
     "contract-meta-schema": "node ./scripts/genMetaSchema.js --contract",
-    "gen-schema": "npm run op-meta-schema && npm run contract-meta-schema"
+    "gen-schema": "npm run contract-meta-schema"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
