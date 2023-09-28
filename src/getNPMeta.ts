@@ -1,56 +1,13 @@
-import { MAGIC_NUMBERS } from "./magicNumbers";
 import { isBytesLike } from "./utils";
 import { GraphQLClient } from "graphql-request";
 
 
 /**
- * @public The query search result from subgraph for NP meta, explicitly designed for Dotrain usage
+ * @public The query search result from subgraph for NP constructor meta
  */
-export type DeployerMeta = [
-    {
-        id: string; 
-        rawBytes: string;
-        magicNumber: bigint; 
-    }, 
-    {
-        id: string; 
-        rawBytes: string;
-        magicNumber: bigint; 
-    },
-    {
-        id: string; 
-        rawBytes: string;
-        magicNumber: bigint; 
-    }
-]
-
-/**
- * @internal Method to check the returned value from sg for deployer meta
- */
-function isValidResult(value: any): value is DeployerMeta {
-    if (Array.isArray(value) && value.length > 2) {
-        let hasAbi = false;
-        let hasAuthroing = false;
-        let hasConstructor = false;
-        value.forEach(v => {
-            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.SOLIDITY_ABIV2) hasAbi = true;
-            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.AUTHORING_META_V1) hasAuthroing = true;
-            if (BigInt(v.magicNumber) === MAGIC_NUMBERS.RAIN_META_DOCUMENT) hasConstructor = true;
-        });
-        if (hasAbi && hasAuthroing && hasConstructor) return value.every(v => {
-            typeof v === "object"
-                && v !== null
-                && typeof v.id === "string"
-                && isBytesLike(v.id)
-                && v.id.length === 66
-                && typeof v.rawBytes === "string"
-                && isBytesLike(v.rawBytes)
-                && typeof v.magicNumber === "string"
-                && MAGIC_NUMBERS.is(BigInt(v.magicNumber));
-        });
-        else return false;
-    }
-    else return false;
+export type DeployerMeta = {
+    id: string;
+    rawBytes: string;
 }
 
 /**
@@ -111,7 +68,7 @@ export async function searchNPMeta(
  * @param hash - The bytecode or constructor hash to search for
  * @param subgraphUrls - Subgraph urls to query from
  * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
- * @returns A promise that resolves with array of meta bytes as hex string and rejects if nothing found
+ * @returns A promise that resolves with meta bytes and hash as hex string and rejects if nothing found
  */
 export async function searchNPDeployerMeta(
     hash: string,
@@ -124,11 +81,8 @@ export async function searchNPDeployerMeta(
         where: {meta_: {id: "${ hash.toLowerCase() }"}}
         first: 1
     ) {
-        meta(where: { magicNumber_not: "18436497220406627634" }) {
-            id
-            rawBytes
-            magicNumber
-        }
+        constructorMetaHash
+        constructorMeta
     }
 }`;
     const _request = async(url: string): Promise<DeployerMeta> => {
@@ -137,41 +91,15 @@ export async function searchNPDeployerMeta(
                 url, { headers: { "Content-Type":"application/json" }, timeout }
             ).request(_query) as any;
             if (!_res) Promise.reject(new Error("no matching record was found"));
-            if (isValidResult(_res?.expressionDeployers[0])) {
-                const result: DeployerMeta = [] as any;
-                let abi = false;
-                let authoring = false;
-                let constructor = false;
-                _res.expressionDeployers[0].forEach(v => {
-                    const mn = BigInt(v.magicNumber);
-                    if (!abi && mn === MAGIC_NUMBERS.SOLIDITY_ABIV2) {
-                        result.push({
-                            id: v.id,
-                            rawBytes: v.rawBytes,
-                            magicNumber: mn
-                        });
-                        abi = true;
-                    }
-                    if (!authoring && mn === MAGIC_NUMBERS.AUTHORING_META_V1) {
-                        result.push({
-                            id: v.id,
-                            rawBytes: v.rawBytes,
-                            magicNumber: mn
-                        });
-                        authoring = true;
-                    }
-                    if (!constructor && mn === MAGIC_NUMBERS.RAIN_META_DOCUMENT) {
-                        result.push({
-                            id: v.id,
-                            rawBytes: v.rawBytes,
-                            magicNumber: mn
-                        });
-                        constructor = true;
-                    }
-                });
-                if (result.length === 3) return Promise.resolve(result);
-                else return Promise.reject(new Error("unexpected returned value"));
-            }
+            if (
+                Array.isArray(_res?.expressionDeployers) &&
+                _res.expressionDeployers.length === 1 &&
+                _res.expressionDeployers[0].constructorMeta &&
+                _res.expressionDeployers[0].constructorMetaHash
+            ) return {
+                id: _res.expressionDeployers[0].constructorMetaHash,
+                rawBytes: _res.expressionDeployers[0].constructorMeta
+            };
             else return Promise.reject(new Error("unexpected returned value"));
         }
         catch (error) {
