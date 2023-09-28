@@ -1,7 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import Ajv, { ValidateFunction } from "ajv";
+// import Ajv, { ValidateFunction } from "ajv";
 import { decodeCborMap, toContractMeta } from "../utils";
 
 
@@ -135,18 +135,18 @@ export namespace ContractMeta {
             );
     }
 
-    /**
-     * @public Method to validate against ContractMeta schema
-     * @param value - The value to check
-     * @param validator - The validator, either the schema as object or ValidatorFunction
-     */
-    export function schemaCheck(
-        value: any,
-        validator: object | ValidateFunction
-    ): value is ContractMeta {
-        if (typeof validator === "function") return validator(value);
-        else return new Ajv().compile(validator)(value);
-    }
+    // /**
+    //  * @public Method to validate against ContractMeta schema
+    //  * @param value - The value to check
+    //  * @param validator - The validator, either the schema as object or ValidatorFunction
+    //  */
+    // export function schemaCheck(
+    //     value: any,
+    //     validator: object | ValidateFunction
+    // ): value is ContractMeta {
+    //     if (typeof validator === "function") return validator(value);
+    //     else return new Ajv().compile(validator)(value);
+    // }
 
     /**
      * @public Method to get ContractMeta object from cbor map
