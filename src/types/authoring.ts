@@ -1,7 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import { META } from "../meta";
+import { Meta } from "../meta";
 import { arrayify, defaultAbiCoder, hexlify, BytesLike } from "../utils";
 
 
@@ -63,7 +63,7 @@ export namespace AuthoringMeta {
      * @public Method to get array of AuthoringMeta object from cbor map
      */
     export function get(map: Map<any, any>): AuthoringMeta[] {
-        const abiEncodedBytes = META.decodeMap(map);
+        const abiEncodedBytes = Meta.decodeMap(map);
         if (typeof abiEncodedBytes === "string") throw new Error("corrupt Authoring meta");
         return abiDecode(abiEncodedBytes);
     }

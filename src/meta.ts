@@ -10,35 +10,27 @@ import { arrayify, cborDecode, cborEncode, cborEncodeMap, hexlify, isBytesLike, 
 
 
 /**
- * @public The query search result from subgraph for NP constructor meta
+ * @public The namespace that packs all that is needed to work with Rain metas
  */
-export type DeployerMeta = {
-    id: string;
-    rawBytes: string;
-}
-
-/**
- * @public The namespace that provides the main functionalities of this library
- */
-export namespace META {
+export namespace Meta {
     /**
-     * @public This namespace provides ABI meta functionalities
+     * @public Provides ABI meta functionalities
      */
     export import Abi = AbiMeta;
     /**
-     * @public This namespace provides Contract meta functionalities
+     * @public Provides Contract meta functionalities
      */
     export import Contract = ContractMeta;
     /**
-     * @public This namespace provides Authoring meta functionalities
+     * @public Provides Authoring meta functionalities
      */
     export import Authoring = AuthoringMeta;
     /**
-     * @public This namespace provides every functionality of Magic Numbers
+     * @public Provides every functionality for Magic Numbers
      */
     export import MagicNumbers = MAGIC_NUMBERS;
     /**
-     * @public This namespace provides every functionality of Rain subgraphs
+     * @public Provides every functionality for Rain subgraphs
      */
     export const KnownSubgraphs = RAIN_SUBGRAPHS;
 
@@ -68,6 +60,20 @@ export namespace META {
         "en"
     ] as const;
     export type KnownContentLanguages = typeof KnownContentLanguages[number];
+
+    /**
+     * @public The query search result from subgraph for NP constructor meta
+     */
+    export type NPConstructor = {
+        /**
+         * NP constructor meta hash
+         */
+        hash: string;
+        /**
+         * NP constructor meta raw bytes
+         */
+        rawBytes: string;
+    }
 
     /**
      * @public Checks if a value is valid Rain meta
@@ -191,10 +197,10 @@ export namespace META {
         hash: string,
         subgraphUrls: string[],
         timeout = 5000
-    ): Promise<DeployerMeta> {
+    ): Promise<NPConstructor> {
         if (!hash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
         const _query = `{ expressionDeployers(where: {meta_: {id: "${ hash.toLowerCase() }"}} first: 1) { constructorMetaHash constructorMeta }}`;
-        const _request = async(url: string): Promise<DeployerMeta> => {
+        const _request = async(url: string): Promise<NPConstructor> => {
             try {
                 const _res = await new GraphQLClient(
                     url, { headers: { "Content-Type":"application/json" }, timeout }
@@ -206,7 +212,7 @@ export namespace META {
                     _res.expressionDeployers[0].constructorMeta &&
                     _res.expressionDeployers[0].constructorMetaHash
                 ) return {
-                    id: _res.expressionDeployers[0].constructorMetaHash,
+                    hash: _res.expressionDeployers[0].constructorMetaHash,
                     rawBytes: _res.expressionDeployers[0].constructorMeta
                 };
                 else return Promise.reject(new Error("unexpected returned value"));
@@ -379,5 +385,303 @@ export namespace META {
             return true;
         }
         else return false;
+    }
+
+    /**
+     * @public 
+     * Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities 
+     * to easliy utilize them. Hashes must 32 bytes (in hex string format) and will 
+     * be stored as lower case.
+     * Meta bytes must be valid cbor encoded.
+     * 
+     * Given a k/v pair of meta hash and meta bytes either at instantiation or when using `updateStore()`,
+     * it regenrates the hash from the meta to check the validity of the k/v pair and if the check
+     * fails it tries to read the meta from subgraphs and store the result if it finds any.
+     * 
+     * @example
+     * ```typescript
+     * // to instantiate with including default subgraphs
+     * const store = new Store();   // pass 'false' to not include default rain subgraph endpoint
+     * 
+     * // or to instantiate with initial arguments
+     * const store = await Store.create(options);
+     * 
+     * // add a new subgraph endpoint url to the subgraph list
+     * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
+     * 
+     * // update the store with a new Store object (merges the stores)
+     * await store.updateStore(newMetaStore)
+     * 
+     * // updates the meta store with a new meta
+     * await store.updateStore(metaHash, metaBytes)
+     * 
+     * // updates the meta store with a new meta by searching through subgraphs
+     * await store.updateStore(metaHash)
+     * 
+     * // to get a record from store
+     * const meta = store.getMeta(metaHash);
+     * 
+     * // to get a authoringMeta record from store
+     * const am = store.getAuthoringMeta(authoringMetaHash);
+     * ```
+     */
+    export class Store {
+        /**
+         * Subgraph endpoint URLs of this store instance
+         */
+        public readonly subgraphs: string[] = [];
+        /**
+         * @internal k/v cache for hashs and their contents
+         */
+        private cache: { [hash: string]: string | undefined | null } = {};
+        /**
+         * @internal k/v cache for authoring meta hashs and abi encoded bytes
+         */
+        private amCache: { [hash: string]: string | undefined } = {};
+
+        /**
+         * @public Constructor of the class
+         * Use `Store.create` to instantiate with initial options.
+         */
+        constructor(includeDefualtSubgraphs = true) {
+            if (includeDefualtSubgraphs) Object.values(RAIN_SUBGRAPHS).forEach(v => {
+                if (typeof v !== "function") v.forEach(e => {
+                    if (!this.subgraphs.includes(e) && e.includes("interpreter-registry-np")) {
+                        this.subgraphs.push(e);
+                    }
+                });
+            });
+        }
+
+        /**
+         * @public Creates a fresh instance of Store object
+         * @param options - (optional) Options for instantiation
+         */
+        public static async create(
+            options?: {
+                /**
+                 * Option to include default subgraphs
+                 */
+                includeDefaultSubgraphs?: boolean;
+                /**
+                 * Additional subgraphs endpoint URLs to include
+                 */
+                subgraphs?: string[];
+                /**
+                 * Records to add to the cache
+                 */
+                records?: { [hash: string]: string }
+            }
+        ): Promise<Store> {
+            const store = new Store(!!options?.includeDefaultSubgraphs);
+            if (options?.subgraphs && options.subgraphs.length) {
+                store.addSubgraphs(options?.subgraphs, false);
+            }
+            if (options?.records) {
+                for (const hash in options.records) {
+                    await store.update(hash, options.records[hash]);
+                }
+            }
+            return store;
+        }
+
+        /**
+         * @public Get meta for a given meta hash
+         * @param metaHash - The meta hash
+         * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
+         */
+        public getMeta(metaHash: string): string | undefined | null {
+            return this.cache[metaHash.toLowerCase()];
+        }
+
+        /**
+         * @public Get the whole meta cache
+         */
+        public getCache(): { [hash: string]: string | undefined | null } {
+            return this.cache;
+        }
+
+        /**
+         * @public Get the whole authoring meta cache
+         */
+        public getAuthoringMetaCache(): { [hash: string]: string | undefined | null } {
+            return this.amCache;
+        }
+
+        /**
+         * @public Updates the whole store with the given Store instance
+         * @param store - A Store object instance
+         */
+        public update(store: Store): void
+
+        /**
+         * @public Updates the meta store for the given meta hash and meta raw bytes
+         * @param metaHash - The meta hash (32 bytes hex string)
+         * @param metaBytes - The raw meta bytes
+         */
+        public async update(metaHash: string, metaBytes: string): Promise<void>
+
+        /**
+         * @public Updates the meta store for the given meta hash by reading from subgraphs
+         * @param metaHash - The meta hash (32 bytes hex string)
+         */
+        public async update(metaHash: string): Promise<void>
+
+        public async update(hashOrStore: string | Store, metaBytes?: string) {
+            if (hashOrStore instanceof Store) {
+                const _kv = hashOrStore.getCache();
+                this.cache = {
+                    ...this.cache,
+                    ..._kv
+                };
+                for (const sg of hashOrStore.subgraphs) {
+                    if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
+                }
+            }
+            else {
+                if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
+                    if (
+                        this.cache[hashOrStore.toLowerCase()] === null || 
+                        this.cache[hashOrStore.toLowerCase()] === undefined
+                    ) {
+                        if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
+                        if (
+                            metaBytes && 
+                            isBytesLike(metaBytes) && 
+                            keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                        ) {
+                            try {
+                                this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
+                                await this.storeContent(metaBytes);
+                            }
+                            catch {
+                                this.cache[hashOrStore.toLowerCase()] = null;
+                            }
+                        }
+                        else {
+                            try {
+                                const _metaBytes = await search(hashOrStore, this.subgraphs);
+                                this.cache[hashOrStore.toLowerCase()] = _metaBytes;
+                                await this.storeContent(_metaBytes);
+                            }
+                            catch {
+                                this.cache[hashOrStore.toLowerCase()] = null;
+                                console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                            }
+                        }
+                    }
+                }
+                else console.log(`invalid hash: ${hashOrStore}`);
+            }
+        }
+
+        /**
+         * @public Adds a new subgraphs endpoint URL to the subgraph list
+         * @param subgraphUrls - Array of subgraph endpoint URLs
+         * @param sync - Option to search for settlement for unsetteled hashs in the cache with new added subgraphs, default is true
+         */
+        public async addSubgraphs(subgraphUrls: string[], sync = true) {
+            subgraphUrls.forEach(sg => {
+                if (typeof sg === "string" && sg) {
+                    if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
+                }
+            });
+            if (sync) for (const hash in this.cache) {
+                if (this.cache[hash] === undefined || this.cache[hash] === null) {
+                    try {
+                        const _metaBytes = await search(hash, subgraphUrls);
+                        this.cache[hash.toLowerCase()] = _metaBytes;
+                        await this.storeContent(_metaBytes);
+                    }
+                    catch {
+                        this.cache[hash] = null;
+                    }
+                }
+            }
+        }
+
+        /**
+         * @internal Stores the meta content items into the store if a Meta is RainDocument
+         * @param rawBytes - The bytes to check and store
+         */
+        private async storeContent(rawBytes: string) {
+            if (!rawBytes.startsWith("0x")) rawBytes = "0x" + rawBytes;
+            if (rawBytes.toLowerCase().startsWith(
+                "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase()
+            )) {
+                try {
+                    const maps = decode(rawBytes);
+                    for (let i = 0; i < maps.length; i++) {
+                        const bytes = await encode([maps[i]], false);
+                        const hash = keccak256(bytes).toLowerCase();
+                        if (!this.cache[hash]) this.cache[hash] = bytes;
+                        if (maps[i].get(1) === MAGIC_NUMBERS.AUTHORING_META_V1) {
+                            const abiEncodedBytes = decodeMap(maps[i]);
+                            if (typeof abiEncodedBytes !== "string") {
+                                const hex = hexlify(
+                                    abiEncodedBytes, 
+                                    { allowMissingPrefix: true }
+                                ).toLowerCase();
+                                const h = keccak256(hex).toLowerCase();
+                                if (!this.amCache[h]) this.amCache[h] = hex;
+                            }
+                        }
+                    }
+                }
+                catch { /**/ }
+            }
+            else {
+                try {
+                    const amMap = decode(rawBytes).find(
+                        v => v.get(1) === MAGIC_NUMBERS.AUTHORING_META_V1
+                    );
+                    if (amMap) {
+                        const abiEncodedBytes = decodeMap(amMap);
+                        if (typeof abiEncodedBytes !== "string") {
+                            const hex = hexlify(
+                                abiEncodedBytes, 
+                                { allowMissingPrefix: true }
+                            ).toLowerCase();
+                            const hash = keccak256(hex).toLowerCase();
+                            if (!this.amCache[hash]) this.amCache[hash] = hex;
+                    
+                        }
+                    }
+                }
+                catch { /**/ }
+            }
+        }
+
+        /**
+         * @public Get authoring meta for a given meta hash
+         * @param hash - The hash
+         * @param fromDeployerHash - Determines if the hash is an authoringMeta or deployer bytecode meta hash
+         * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
+         */
+        public async getAuthoringMeta(
+            hash: string,
+            fromDeployerHash = false
+        ): Promise<string | undefined> {
+            if (!fromDeployerHash) return this.amCache[hash.toLowerCase()];
+            else {
+                try {
+                    const _deployerMeta = await searchDeployerMeta(hash, this.subgraphs);
+                    this.update(_deployerMeta.hash, _deployerMeta.rawBytes);
+                    const amMap = decode(_deployerMeta.rawBytes).find(
+                        v => v.get(1) === MAGIC_NUMBERS.AUTHORING_META_V1
+                    );
+                    if (amMap) {
+                        const abiEncodedBytes = decodeMap(amMap);
+                        if (typeof abiEncodedBytes !== "string") return hexlify(
+                            abiEncodedBytes, 
+                            { allowMissingPrefix: true }
+                        ).toLowerCase();
+                        else return undefined;
+                    }
+                    else return undefined;
+                }
+                catch { return undefined; }
+            }
+        }
     }
 }

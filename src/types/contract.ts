@@ -1,7 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import { META } from "../meta";
+import { Meta } from "../meta";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -139,7 +139,7 @@ export namespace ContractMeta {
      * @param map - The cbor map
      */
     export function get(map: Map<any, any>): ContractMeta {
-        const contractMetaStr = META.decodeMap(map);
+        const contractMetaStr = Meta.decodeMap(map);
         if (typeof contractMetaStr !== "string") throw new Error("corrupt contract meta");
         const parsed = JSON.parse(contractMetaStr);
         if (ContractMeta.is(parsed)) return parsed;
