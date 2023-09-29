@@ -1,8 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-// import Ajv, { ValidateFunction } from "ajv";
-import { decodeCborMap, toContractMeta } from "../utils";
+import { META } from "../meta";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -140,9 +139,11 @@ export namespace ContractMeta {
      * @param map - The cbor map
      */
     export function get(map: Map<any, any>): ContractMeta {
-        const contractMetaStr = decodeCborMap(map);
+        const contractMetaStr = META.decodeMap(map);
         if (typeof contractMetaStr !== "string") throw new Error("corrupt contract meta");
-        return toContractMeta(contractMetaStr);
+        const parsed = JSON.parse(contractMetaStr);
+        if (ContractMeta.is(parsed)) return parsed;
+        else throw new Error("invalid contract meta content");
     }
 }
 

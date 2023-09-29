@@ -2,7 +2,8 @@
 // version 0.0.0
 
 import { utils } from "ethers";
-import { decodeCborMap } from "../utils";
+import { META } from "../meta";
+
 
 
 /**
@@ -61,7 +62,7 @@ export namespace AbiMeta {
      * @param map - The cbor map
      */
     export function get(map: Map<any, any>): AbiMeta[] {
-        const _abiStr = decodeCborMap(map);
+        const _abiStr = META.decodeMap(map);
         if (typeof _abiStr === "string") {
             const _abi = JSON.parse(_abiStr);
             if (AbiMeta.isArray(_abi)) return _abi;

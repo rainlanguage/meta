@@ -1,7 +1,8 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import { arrayify, defaultAbiCoder, decodeCborMap } from "../utils";
+import { META } from "../meta";
+import { arrayify, defaultAbiCoder, hexlify, BytesLike } from "../utils";
 
 
 const WordPattern = /^[a-z][0-9a-z-]*$/;
@@ -62,30 +63,16 @@ export namespace AuthoringMeta {
      * @public Method to get array of AuthoringMeta object from cbor map
      */
     export function get(map: Map<any, any>): AuthoringMeta[] {
-        const abiEncodedBytes = decodeCborMap(map);
+        const abiEncodedBytes = META.decodeMap(map);
         if (typeof abiEncodedBytes === "string") throw new Error("corrupt Authoring meta");
-        const authoringMeta = defaultAbiCoder.decode(
-            [ Struct ], 
-            abiEncodedBytes
-        )?.AuthoringMeta?.map((v: any) => {
-            return {
-                word: String.fromCharCode(
-                    ...arrayify(v.word, { allowMissingPrefix: true })
-                        .filter(v => v !== 0)
-                ),
-                description: v.description,
-                operandParserOffset: v.operandParserOffset
-            };
-        });
-        if (AuthoringMeta.isArray(authoringMeta)) return authoringMeta;
-        else throw new Error("invalid Authoring meta");
+        return abiDecode(abiEncodedBytes);
     }
 
     /**
      * @public Get array of authoring meta from abi encoded bytes
-     * @param data - the data
+     * @param data - The abi encoded AuhtoringMeta data
      */
-    export function fromAbiEncoded(data: string): AuthoringMeta[] {
+    export function abiDecode(data: BytesLike): AuthoringMeta[] {
         const authoringMeta = defaultAbiCoder.decode(
             [ Struct ], 
             data
@@ -101,5 +88,25 @@ export namespace AuthoringMeta {
         });
         if (AuthoringMeta.isArray(authoringMeta)) return authoringMeta;
         else throw new Error("invalid Authoring meta");
+    }
+
+    /**
+     * @public Method to abi encode array of AuhtoringMeta
+     * @param authoringMeta - Array of AuthoringMeta
+     */
+    export function abiEncode(authoringMeta: AuthoringMeta[]): string {
+        return defaultAbiCoder.encode(
+            [ Struct ],
+            [ 
+                authoringMeta.map(v => ({
+                    word: hexlify(
+                        Array.from(v.word).map(char => char.charCodeAt(0)),
+                        { allowMissingPrefix: true }
+                    ).padEnd(66, "0"),
+                    operandParserOffset: v.operandParserOffset,
+                    description: v.description
+                }))
+            ]
+        );
     }
 }
