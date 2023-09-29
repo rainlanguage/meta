@@ -401,7 +401,6 @@ export const cborMapEncode = async(map: Map<number, any>): Promise<string> => {
 };
 
 /**
- * @deprecated
  * @public Calculates the hash for a given meta
  * @param cborMaps - array of cbor map items
  * @param asRainDocument - If the final hash should be calculated as RainDocument of not
@@ -414,7 +413,6 @@ export async function getMetaHash(
 
 
 /**
- * @deprecated
  * @public Calculates the hash for a given meta
  * @param items - array of cbor map items as objects
  * @param asRainDocument - If the final hash should be calculated as RainDocument of not
