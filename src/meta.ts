@@ -721,5 +721,17 @@ export namespace Meta {
             if (!this.dotrainCache[uri]) return undefined;
             else return this.getMeta(this.dotrainCache[uri]!);
         }
+
+        /**
+         * @public Method to delete dotrain from store
+         * @param uri - The dotrain URI
+         * @param keepMeta - If the meta should be kept or not
+         */
+        public deleteDotrain(uri: string, keepMeta = false) {
+            if (this.dotrainCache[uri]) {
+                if (!keepMeta) delete this.cache[this.dotrainCache[uri]];
+                delete this.dotrainCache[uri];
+            }
+        }
     }
 }
