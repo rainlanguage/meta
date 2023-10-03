@@ -258,7 +258,7 @@ export function deepCopy<T>(variable: T): T {
 */
 export const cborDecode = (dataEncoded_: string): Array<any> => {
     return decodeAllSync(
-        arrayify(dataEncoded_, { allowMissingPrefix: true }).buffer
+        arrayify(dataEncoded_, { allowMissingPrefix: true })
     );
 };
 
@@ -335,4 +335,15 @@ export const cborEncode = async(
  */
 export const cborEncodeMap = async(map: Map<number, any>): Promise<string> => {
     return (await encodeAsync(map, { canonical: true })).toString("hex").toLowerCase();
+};
+
+
+/**
+ * @public Converts a string to uint8array
+ * @param text - the text to convert
+ */
+export const stringToUint8Array = (text: string): Uint8Array => {
+    return Uint8Array.from(
+        Array.from(text).map(char => char.charCodeAt(0))
+    );
 };

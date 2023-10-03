@@ -6,7 +6,7 @@ import { GraphQLClient } from "graphql-request";
 import { ContractMeta } from "./types/contract";
 import { RAIN_SUBGRAPHS } from "./rainSubgraphs";
 import { AuthoringMeta } from "./types/authoring";
-import { arrayify, cborDecode, cborEncode, cborEncodeMap, hexlify, isBytesLike, keccak256 } from "./utils";
+import { arrayify, cborDecode, cborEncode, cborEncodeMap, hexlify, isBytesLike, keccak256, stringToUint8Array } from "./utils";
 
 
 /**
@@ -64,7 +64,7 @@ export namespace Meta {
     /**
      * @public The query search result from subgraph for NP constructor meta
      */
-    export type NPConstructor = {
+    export type NPConstructorMeta = {
         /**
          * NP constructor meta hash
          */
@@ -188,7 +188,7 @@ export namespace Meta {
 
     /**
      * @public Method to search for expression deployer meta in provided subgraphs with the given meta hash
-     * @param hash - The bytecode or constructor hash to search for
+     * @param hash - The bytecode meta or constructor meta hash to search for
      * @param subgraphUrls - Subgraph urls to query from
      * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
      * @returns A promise that resolves with ABI meta bytes as hex string and rejects if nothing found
@@ -197,10 +197,10 @@ export namespace Meta {
         hash: string,
         subgraphUrls: string[],
         timeout = 5000
-    ): Promise<NPConstructor> {
+    ): Promise<NPConstructorMeta> {
         if (!hash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
         const _query = `{ expressionDeployers(where: {meta_: {id: "${ hash.toLowerCase() }"}} first: 1) { constructorMetaHash constructorMeta }}`;
-        const _request = async(url: string): Promise<NPConstructor> => {
+        const _request = async(url: string): Promise<NPConstructorMeta> => {
             try {
                 const _res = await new GraphQLClient(
                     url, { headers: { "Content-Type":"application/json" }, timeout }
@@ -265,17 +265,7 @@ export namespace Meta {
         }[] | Map<any, any>[],
         asRainDocument: boolean
     ): Promise<string> {
-        let bytes = await encode(items as any, asRainDocument);
-        if (bytes.startsWith("0x")) bytes = bytes.slice(2);
-        if (asRainDocument) return keccak256(
-            "0x" + 
-            MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase() +
-            bytes.toLowerCase()
-        );
-        else {
-            if (items.length > 1) throw new Error("sequences must be hashed as RainDocument");
-            return keccak256("0x" + bytes.toLowerCase());
-        }
+        return keccak256(await encode(items as any, asRainDocument)).toLowerCase();
     }
 
     /**
@@ -332,7 +322,7 @@ export namespace Meta {
             for (let i = 0; i < _items.length; i++) {
                 if (_items[i].magicNumber === MAGIC_NUMBERS.RAIN_META_DOCUMENT) throw new Error("cannot nest RainDocument meta");
                 body = body + (await cborEncode(
-                    arrayify(_items[i].payload, {  allowMissingPrefix: true }).buffer, 
+                    arrayify(_items[i].payload, {  allowMissingPrefix: true }), 
                     _items[i].magicNumber, 
                     _items[i].contentType, 
                     { 
@@ -433,11 +423,15 @@ export namespace Meta {
         /**
          * @internal k/v cache for hashs and their contents
          */
-        private cache: { [hash: string]: string | undefined | null } = {};
+        private cache: { [hash: string]: string | null } = {};
         /**
          * @internal k/v cache for authoring meta hashs and abi encoded bytes
          */
-        private amCache: { [hash: string]: string | undefined } = {};
+        private amCache: { [hash: string]: string } = {};
+        /**
+         * @public k/v cache for local dotrain files path and hashs
+         */
+        public readonly dotrainCache: { [uri: string]: string } = {};
 
         /**
          * @public Constructor of the class
@@ -497,14 +491,14 @@ export namespace Meta {
         /**
          * @public Get the whole meta cache
          */
-        public getCache(): { [hash: string]: string | undefined | null } {
+        public getCache(): { [hash: string]: string | null } {
             return this.cache;
         }
 
         /**
          * @public Get the whole authoring meta cache
          */
-        public getAuthoringMetaCache(): { [hash: string]: string | undefined | null } {
+        public getAuthoringMetaCache(): { [hash: string]: string } {
             return this.amCache;
         }
 
@@ -541,7 +535,7 @@ export namespace Meta {
             else {
                 if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
                     if (
-                        this.cache[hashOrStore.toLowerCase()] === null || 
+                        this.cache[hashOrStore.toLowerCase()] === null ||
                         this.cache[hashOrStore.toLowerCase()] === undefined
                     ) {
                         if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
@@ -558,7 +552,7 @@ export namespace Meta {
                                 this.cache[hashOrStore.toLowerCase()] = null;
                             }
                         }
-                        else {
+                        else if (this.cache[hashOrStore.toLowerCase()] === undefined) {
                             try {
                                 const _metaBytes = await search(hashOrStore, this.subgraphs);
                                 this.cache[hashOrStore.toLowerCase()] = _metaBytes;
@@ -682,6 +676,50 @@ export namespace Meta {
                 }
                 catch { return undefined; }
             }
+        }
+
+        /**
+         * @public Stores (or updates in case the URI already exists) dotrain text as meta into the store cache 
+         * and map it to the provided path it should be noted that reading the content of the dotrain is not in 
+         * the scope of Store and handling and passing on a correct URI (path) for the text must be handled 
+         * externally by the implementer
+         * @param text - The dotrain text
+         * @param uri - The dotrain file URI (path)
+         * @param keepOld - In case of update, if the previous dotrain meta with same URI must be kept in the store or not, default is false
+         */
+        public async storeDotrain(text: string, uri: string, keepOld = false) {
+            const _dotrainMeta = (await encode([{
+                payload: stringToUint8Array(text),
+                magicNumber: MagicNumbers.DOTRAIN_V1,
+                contentType: "application/octet-stream"
+            }], false)).toLowerCase();
+            const _dotrainMetaHash = keccak256(_dotrainMeta).toLowerCase();
+            if (this.dotrainCache[uri] !== undefined) {
+                if (this.dotrainCache[uri]!.toLowerCase() !== _dotrainMetaHash) {
+                    const _oldHash = this.dotrainCache[uri]!.toLowerCase();
+                    if (this.cache[_oldHash]) {
+                        if (!keepOld) delete this.cache[_oldHash];
+                    }
+                    this.dotrainCache[uri] = _dotrainMetaHash;
+                    this.cache[_dotrainMetaHash] = _dotrainMeta;
+                }
+                else {
+                    if (!this.cache[_dotrainMetaHash]) this.cache[_dotrainMetaHash] = _dotrainMeta;
+                }
+            }
+            else {
+                this.dotrainCache[uri] = _dotrainMetaHash;
+                this.cache[_dotrainMetaHash] = _dotrainMeta;
+            }
+        }
+
+        /**
+         * @public Method to get dotrain meta from an URI (file path)
+         * @param uri - The dotrain file URI
+         */
+        public getDotrainMeta(uri: string): string | undefined | null {
+            if (!this.dotrainCache[uri]) return undefined;
+            else return this.getMeta(this.dotrainCache[uri]!);
         }
     }
 }
