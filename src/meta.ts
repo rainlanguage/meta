@@ -523,33 +523,35 @@ export namespace Meta {
 
         public async update(hashOrStore: string | Store, metaBytes?: string) {
             if (hashOrStore instanceof Store) {
-                const _kv = hashOrStore.getCache();
-                this.cache = {
-                    ...this.cache,
-                    ..._kv
-                };
-                for (const sg of hashOrStore.subgraphs) {
-                    if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
-                }
+                this.merge({
+                    subgraphs: hashOrStore.subgraphs,
+                    cache: hashOrStore.cache,
+                    amCache: hashOrStore.amCache,
+                    dotrainCache: hashOrStore.dotrainCache,
+                });
             }
             else {
                 if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
-                    if (
-                        this.cache[hashOrStore.toLowerCase()] === null ||
-                        this.cache[hashOrStore.toLowerCase()] === undefined
-                    ) {
-                        if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
-                        if (
-                            metaBytes && 
-                            isBytesLike(metaBytes) && 
-                            keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
-                        ) {
+                    if (!this.cache[hashOrStore.toLowerCase()]) {
+                        if (metaBytes) {
+                            if (!metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                             try {
-                                this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
-                                await this.storeContent(metaBytes);
+                                if (
+                                    keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                                ) {
+                                    this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
+                                    await this.storeContent(metaBytes);
+                                }
+                                else {
+                                    if (!this.cache[hashOrStore.toLowerCase()]) {
+                                        this.cache[hashOrStore.toLowerCase()] = null;
+                                    }
+                                }
                             }
                             catch {
-                                this.cache[hashOrStore.toLowerCase()] = null;
+                                if (!this.cache[hashOrStore.toLowerCase()]) {
+                                    this.cache[hashOrStore.toLowerCase()] = null;
+                                }
                             }
                         }
                         else if (this.cache[hashOrStore.toLowerCase()] === undefined) {
@@ -559,13 +561,15 @@ export namespace Meta {
                                 await this.storeContent(_metaBytes);
                             }
                             catch {
-                                this.cache[hashOrStore.toLowerCase()] = null;
-                                console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                                if (!this.cache[hashOrStore.toLowerCase()]) {
+                                    this.cache[hashOrStore.toLowerCase()] = null;
+                                }
+                                // console.log(`cannot find any settlement for hash: ${hashOrStore}`);
                             }
                         }
                     }
                 }
-                else console.log(`invalid hash: ${hashOrStore}`);
+                // else console.log(`invalid hash: ${hashOrStore}`);
             }
         }
 
@@ -583,12 +587,14 @@ export namespace Meta {
             if (sync) for (const hash in this.cache) {
                 if (this.cache[hash] === undefined || this.cache[hash] === null) {
                     try {
-                        const _metaBytes = await search(hash, subgraphUrls);
+                        const _metaBytes = await search(hash, this.subgraphs);
                         this.cache[hash.toLowerCase()] = _metaBytes;
                         await this.storeContent(_metaBytes);
                     }
                     catch {
-                        this.cache[hash] = null;
+                        if (!this.cache[hash.toLowerCase()]) {
+                            this.cache[hash.toLowerCase()] = null;
+                        }
                     }
                 }
             }
@@ -649,14 +655,14 @@ export namespace Meta {
         /**
          * @public Get authoring meta for a given meta hash
          * @param hash - The hash
-         * @param fromDeployerHash - Determines if the hash is an authoringMeta or deployer bytecode meta hash
+         * @param isDeployerHash - Determines if the hash is an authoringMeta or deployer bytecode meta hash
          * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
          */
         public async getAuthoringMeta(
             hash: string,
-            fromDeployerHash = false
+            isDeployerHash = false
         ): Promise<string | undefined> {
-            if (!fromDeployerHash) return this.amCache[hash.toLowerCase()];
+            if (!isDeployerHash) return this.amCache[hash.toLowerCase()];
             else {
                 try {
                     const _deployerMeta = await searchDeployerMeta(hash, this.subgraphs);
@@ -731,6 +737,43 @@ export namespace Meta {
             if (this.dotrainCache[uri]) {
                 if (!keepMeta) delete this.cache[this.dotrainCache[uri]];
                 delete this.dotrainCache[uri];
+            }
+        }
+
+        /**
+         * @public Blindly merges kv into the instance of meta store, should be used with caution as
+         * it does not do any checks on the given values
+         * @param properties - The properties to merge
+         */
+        public merge(properties: {
+            subgraphs?: string[];
+            cache?: { [hash: string]: string | null }; 
+            amCache?: { [hash: string]: string };  
+            dotrainCache?: { [hash: string]: string };
+        }) {
+            if (properties.subgraphs) properties.subgraphs.forEach(sg => {
+                if (typeof sg === "string" && sg) {
+                    if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
+                }
+            });
+            if (properties.cache) for (const hash in properties.cache) {
+                if (!this.cache[hash.toLowerCase()]) {
+                    this.cache[hash.toLowerCase()] = properties.cache[hash] !== null
+                        ? properties.cache[hash]!.toLowerCase() 
+                        : null;
+                }
+            }
+            if (properties.amCache) for (const hash in properties.amCache) {
+                if (!this.amCache[hash.toLowerCase()]) {
+                    this.amCache[hash.toLowerCase()] = properties.amCache[hash].toLowerCase();
+                }
+            }
+            if (properties.dotrainCache) for (const hash in properties.dotrainCache) {
+                if (!this.dotrainCache[hash.toLowerCase()]) {
+                    this.dotrainCache[
+                        hash.toLowerCase()
+                    ] = properties.dotrainCache[hash].toLowerCase();
+                }
             }
         }
     }
