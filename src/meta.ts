@@ -554,7 +554,7 @@ export namespace Meta {
                                 }
                             }
                         }
-                        else if (this.cache[hashOrStore.toLowerCase()] === undefined) {
+                        else {
                             try {
                                 const _metaBytes = await search(hashOrStore, this.subgraphs);
                                 this.cache[hashOrStore.toLowerCase()] = _metaBytes;
