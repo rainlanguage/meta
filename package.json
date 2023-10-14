@@ -12,9 +12,10 @@
     "url": "https://github.com/rainprotocol/meta/issues"
   },
   "homepage": "https://github.com/rainprotocol/meta#readme",
-  "main": "./cjs.js",
-  "module": "./esm.js",
-  "browser": "./esm.js",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "browser": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "files": [
     "/src",
     "/dist",
@@ -33,15 +34,12 @@
     "lint": "eslint \"src/**\"",
     "lint-fix": "eslint \"src/**\" --fix",
     "test": "echo \"there are no tests at the moment!\"",
-    "op-meta-schema": "node ./scripts/genMetaSchema.js --op",
     "contract-meta-schema": "node ./scripts/genMetaSchema.js --contract",
-    "gen-schema": "npm run op-meta-schema && npm run contract-meta-schema"
+    "gen-schema": "npm run contract-meta-schema"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
     "@types/pako": "^2.0.0",
-    "@types/prettier": "^2.7.2",
-    "@types/string-math": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
@@ -52,14 +50,10 @@
     "typescript-json-schema": "^0.56.0"
   },
   "dependencies": {
-    "ajv": "^8.12.0",
-    "buffer": "^6.0.3",
     "cbor-web": "^9.0.0",
     "ethers": "^5.7.2",
     "graphql": "^16.6.0",
     "graphql-request": "^5.2.0",
-    "pako": "^2.1.0",
-    "prettier": "^2.8.7",
-    "string-math": "^1.2.2"
+    "pako": "^2.1.0"
   }
 }

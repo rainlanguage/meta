@@ -1,0 +1,207 @@
+[
+  {
+    "word": "stack",
+    "description": "Copies an existing value from the stack.",
+    "operandParserOffset": 16
+  },
+  {
+    "word": "constant",
+    "description": "Copies a constant value onto the stack.",
+    "operandParserOffset": 16
+  },
+  {
+    "word": "context",
+    "description": "Copies a value from the context. The first operand is the context column and second is the context row.",
+    "operandParserOffset": 32
+  },
+  {
+    "word": "hash",
+    "description": "Hashes all inputs into a single 32 byte value using keccak256.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "block-number",
+    "description": "The current block number.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "chain-id",
+    "description": "The current chain id.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "max-int-value",
+    "description": "The maximum possible non-negative integer value. 2^256 - 1.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "max-decimal18-value",
+    "description": "The maximum possible 18 decimal fixed point value. roughly 1.15e77.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "block-timestamp",
+    "description": "The current block timestamp.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "any",
+    "description": "The first non-zero value out of all inputs, or 0 if every input is 0.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "conditions",
+    "description": "Treats inputs as pairwise condition/value pairs. The first nonzero condition's value is used. If no conditions are nonzero, the expression reverts. The operand can be used as an error code to differentiate between multiple conditions in the same expression.",
+    "operandParserOffset": 16
+  },
+  {
+    "word": "ensure",
+    "description": "Reverts if any input is 0. All inputs are eagerly evaluated there are no outputs. The operand can be used as an error code to differentiate between multiple conditions in the same expression.",
+    "operandParserOffset": 16
+  },
+  {
+    "word": "equal-to",
+    "description": "1 if all inputs are equal, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "every",
+    "description": "The last nonzero value out of all inputs, or 0 if any input is 0.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "greater-than",
+    "description": "1 if the first input is greater than the second input, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "greater-than-or-equal-to",
+    "description": "1 if the first input is greater than or equal to the second input, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "if",
+    "description": "If the first input is nonzero, the second input is used. Otherwise, the third input is used. If is eagerly evaluated.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "is-zero",
+    "description": "1 if the input is 0, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "less-than",
+    "description": "1 if the first input is less than the second input, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "less-than-or-equal-to",
+    "description": "1 if the first input is less than or equal to the second input, 0 otherwise.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-div",
+    "description": "Divides the first input by all other inputs as fixed point 18 decimal numbers (i.e. 'one' is 1e18). Errors if any divisor is zero.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-mul",
+    "description": "Multiplies all inputs together as fixed point 18 decimal numbers (i.e. 'one' is 1e18). Errors if the multiplication exceeds the maximum value (roughly 1.15e77).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-scale18-dynamic",
+    "description": "Scales a value from some fixed point decimal scale to 18 decimal fixed point. The first input is the scale to scale from and the second is the value to scale. The two optional operands control rounding and saturation respectively as per `decimal18-scale18`.",
+    "operandParserOffset": 48
+  },
+  {
+    "word": "decimal18-scale18",
+    "description": "Scales an input value from some fixed point decimal scale to 18 decimal fixed point. The first operand is the scale to scale from. The second (optional) operand controls rounding where 0 (default) rounds down and 1 rounds up. The third (optional) operand controls saturation where 0 (default) errors on overflow and 1 saturates at max-decimal-value.",
+    "operandParserOffset": 64
+  },
+  {
+    "word": "decimal18-scale-n",
+    "description": "Scales an input value from 18 decimal fixed point to some other fixed point scale N. The first operand is the scale to scale to. The second (optional) operand controls rounding where 0 (default) rounds down and 1 rounds up. The third (optional) operand controls saturation where 0 (default) errors on overflow and 1 saturates at max-decimal-value.",
+    "operandParserOffset": 64
+  },
+  {
+    "word": "int-add",
+    "description": "Adds all inputs together as non-negative integers. Errors if the addition exceeds the maximum value (roughly 1.15e77).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-add",
+    "description": "Adds all inputs together as fixed point 18 decimal numbers (i.e. 'one' is 1e18). Errors if the addition exceeds the maximum value (roughly 1.15e77).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-div",
+    "description": "Divides the first input by all other inputs as non-negative integers. Errors if any divisor is zero.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-exp",
+    "description": "Raises the first input to the power of all other inputs as non-negative integers. Errors if the exponentiation would exceed the maximum value (roughly 1.15e77).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-max",
+    "description": "Finds the maximum value from all inputs as non-negative integers.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-max",
+    "description": "Finds the maximum value from all inputs as fixed point 18 decimal numbers (i.e. 'one' is 1e18).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-min",
+    "description": "Finds the minimum value from all inputs as non-negative integers.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-min",
+    "description": "Finds the minimum value from all inputs as fixed point 18 decimal numbers (i.e. 'one' is 1e18).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-mod",
+    "description": "Modulos the first input by all other inputs as non-negative integers. Errors if any divisor is zero.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-mul",
+    "description": "Multiplies all inputs together as non-negative integers. Errors if the multiplication exceeds the maximum value (roughly 1.15e77).",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "int-sub",
+    "description": "Subtracts all inputs from the first input as non-negative integers. Errors if the subtraction would result in a negative value.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "decimal18-sub",
+    "description": "Subtracts all inputs from the first input as fixed point 18 decimal numbers (i.e. 'one' is 1e18). Errors if the subtraction would result in a negative value.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "get",
+    "description": "Gets a value from storage. The first operand is the key to lookup.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "set",
+    "description": "Sets a value in storage. The first operand is the key to set and the second operand is the value to set.",
+    "operandParserOffset": 0
+  },
+  {
+    "word": "uniswap-v2-amount-in",
+    "description": "Computes the minimum amount of input tokens required to get a given amount of output tokens from a UniswapV2 pair. Input/output token directions are from the perspective of the Uniswap contract. The first input is the factory address, the second is the amount of output tokens, the third is the input token address, and the fourth is the output token address. If the operand is 1 the last time the prices changed will be returned as well.",
+    "operandParserOffset": 16
+  },
+  {
+    "word": "uniswap-v2-amount-out",
+    "description": "Computes the maximum amount of output tokens received from a given amount of input tokens from a UniswapV2 pair. Input/output token directions are from the perspective of the Uniswap contract. The first input is the factory address, the second is the amount of input tokens, the third is the input token address, and the fourth is the output token address. If the operand is 1 the last time the prices changed will be returned as well.",
+    "operandParserOffset": 16
+  }
+]

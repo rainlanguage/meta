@@ -1,7 +1,7 @@
 // specify the version of the meta in the following line
 // version 0.0.0
 
-import Ajv, { ValidateFunction } from "ajv";
+import { Meta } from "../meta";
 
 
 const NamePattern = /^[a-z][0-9a-z-]*$/;
@@ -135,16 +135,15 @@ export namespace ContractMeta {
     }
 
     /**
-     * @public Method to validate against ContractMeta schema
-     * @param value - The value to check
-     * @param validator - The validator, either the schema as object or ValidatorFunction
+     * @public Method to get ContractMeta object from cbor map
+     * @param map - The cbor map
      */
-    export function schemaCheck(
-        value: any,
-        validator: object | ValidateFunction
-    ): value is ContractMeta {
-        if (typeof validator === "function") return validator(value);
-        else return new Ajv().compile(validator)(value);
+    export function get(map: Map<any, any>): ContractMeta {
+        const contractMetaStr = Meta.decodeMap(map);
+        if (typeof contractMetaStr !== "string") throw new Error("corrupt contract meta");
+        const parsed = JSON.parse(contractMetaStr);
+        if (ContractMeta.is(parsed)) return parsed;
+        else throw new Error("invalid contract meta content");
     }
 }
 

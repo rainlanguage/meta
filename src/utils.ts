@@ -1,13 +1,5 @@
-import Ajv from "ajv";
-import { Buffer } from "buffer/";
-import { OpMeta } from "./types/op";
-import stringMath from "string-math";
-import { deflate, inflate } from "pako";
-import { format } from "prettier/standalone";
 import { MAGIC_NUMBERS } from "./magicNumbers";
-import { ContractMeta } from "./types/contract";
-import babelParser from "prettier/parser-babel";
-import { decodeAllSync, encodeCanonical } from "cbor-web";
+import { decodeAllSync, encodeAsync } from "cbor-web";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
 
@@ -56,110 +48,20 @@ export const {
     /**
      * @public ethers keccak256
      */
-    keccak256
+    keccak256,
+    /**
+     * @public ethers isAddress
+     */
+    isAddress,
+    /**
+     * @public ethers default encoder
+     */
+    defaultAbiCoder,
+    /**
+     * @public ethers interface
+     */
+    Interface
 } = utils;
-
-/**
- * @public EVM networks chain ids
- */
-export const ChainId = {
-    ETHEREUM          : 1,
-    ROPSTEN           : 3,
-    RINKEBY           : 4,
-    GÖRLI             : 5,
-    SEPOLIA           : 11155111,
-    KOVAN             : 42,
-    POLYGON           : 137,
-    POLYGON_TESTNET   : 80001,
-    POLYGON_ZKEVM     : 1101,
-    FANTOM            : 250,
-    FANTOM_TESTNET    : 4002,
-    GNOSIS            : 100,
-    BSC               : 56,
-    BSC_TESTNET       : 97,
-    ARBITRUM          : 42161,
-    ARBITRUM_NOVA     : 42170,
-    ARBITRUM_TESTNET  : 79377087078960,
-    AVALANCHE         : 43114,
-    AVALANCHE_TESTNET : 43113,
-    HECO              : 128,
-    HECO_TESTNET      : 256,
-    HARMONY           : 1666600000,
-    HARMONY_TESTNET   : 1666700000,
-    OKEX              : 66,
-    OKEX_TESTNET      : 65,
-    CELO              : 42220,
-    PALM              : 11297108109,
-    MOONRIVER         : 1285,
-    FUSE              : 122,
-    TELOS             : 40,
-    MOONBEAM          : 1284,
-    OPTIMISM          : 10,
-    KAVA              : 2222,
-    METIS             : 1088,
-    BOBA              : 288,
-    BOBA_AVAX         : 43288,
-    BOBA_BNB          : 56288,
-    BTTC              : 199,
-    THUNDERCORE       : 108,
-    // CONSENSUS_ZKEVM_TESTNET : 59140,
-    // SCROLL_ALPHA_TESTNET    : 534353,
-    // BASE_TESTNET            : 84531,
-    // FILECOIN                : 314,
-} as const;
-export type ChainId = (typeof ChainId)[keyof typeof ChainId];
-
-/**
- * @public EVM networks names
- */
-export const ChainKey = {
-    [ChainId.ARBITRUM]          : "arbitrum",
-    [ChainId.ARBITRUM_NOVA]     : "arbitrum-nova",
-    [ChainId.ARBITRUM_TESTNET]  : "arbitrum-testnet",
-    [ChainId.AVALANCHE]         : "avalanche",
-    [ChainId.AVALANCHE_TESTNET] : "avalance-testnet",
-    [ChainId.BSC]               : "bsc",
-    [ChainId.BSC_TESTNET]       : "bsc-testnet",
-    [ChainId.CELO]              : "celo",
-    [ChainId.ETHEREUM]          : "ethereum",
-    [ChainId.FANTOM]            : "fantom",
-    [ChainId.FANTOM_TESTNET]    : "fantom-testnet",
-    [ChainId.FUSE]              : "fuse",
-    [ChainId.GÖRLI]             : "goerli",
-    [ChainId.HARMONY]           : "harmony",
-    [ChainId.HARMONY_TESTNET]   : "harmony-testnet",
-    [ChainId.HECO]              : "heco",
-    [ChainId.HECO_TESTNET]      : "heco-testnet",
-    [ChainId.KOVAN]             : "kovan",
-    [ChainId.ROPSTEN]           : "ropsten",
-    [ChainId.POLYGON]           : "polygon",
-    [ChainId.POLYGON_TESTNET]   : "matic-testnet",
-    [ChainId.POLYGON_ZKEVM]     : "polygon-zkevm",
-    [ChainId.MOONBEAM]          : "moonbeam",
-    // [ChainId.MOONBEAM_TESTNET]          : "moonbeam-testnet",
-    [ChainId.MOONRIVER]         : "moonriver",
-    [ChainId.OKEX]              : "okex",
-    [ChainId.OKEX_TESTNET]      : "okex-testnet",
-    [ChainId.PALM]              : "palm",
-    // [ChainId.PALM_TESTNET]              : "palm-testnet",
-    [ChainId.RINKEBY]           : "rinkeby",
-    [ChainId.TELOS]             : "telos",
-    [ChainId.GNOSIS]            : "gnosis",
-    [ChainId.OPTIMISM]          : "optimism",
-    [ChainId.KAVA]              : "kava",
-    [ChainId.METIS]             : "metis",
-    [ChainId.BOBA]              : "boba",
-    [ChainId.BOBA_AVAX]         : "boba-avax",
-    [ChainId.BOBA_BNB]          : "boba-bnb",
-    [ChainId.BTTC]              : "bttc",
-    [ChainId.THUNDERCORE]       : "thundercore",
-    [ChainId.SEPOLIA]           : "sepolia",
-    // [ChainId.CONSENSUS_ZKEVM_TESTNET]   : "consensus-zkevm-testnet",
-    // [ChainId.SCROLL_ALPHA_TESTNET]      : "scroll-alpha-testnet",
-    // [ChainId.BASE_TESTNET]              :"base-testnet",
-    // [ChainId.FILECOIN]                  : "filecoin",
-} as const;
-export type ChainKey = (typeof ChainKey)[keyof typeof ChainKey];
 
 /**
  * @public
@@ -345,476 +247,6 @@ export function deepCopy<T>(variable: T): T {
 }
 
 /**
- * @public Validates an array of OpMetas
- * @param opmeta - The opmeta as a object, array of objects or string content
- */
-export const validateOpMeta = (opmeta: any): opmeta is OpMeta[] => {
-    const _expandBits = (bits: [number, number]) => {
-        const _len = bits[1] - bits[0] + 1;
-        const _result = [];
-        for (let i = 0; i < _len; i++) {
-            _result.push(bits[0] + i);
-        }
-        return _result;
-    };
-    if (
-        typeof opmeta === "number"
-        || typeof opmeta === "bigint"
-        || typeof opmeta === "symbol"
-        || typeof opmeta === "function"
-        || typeof opmeta === "boolean"
-        || typeof opmeta === "undefined"
-    ) throw new Error("invalid opmeta type");
-    if (typeof opmeta === "string") opmeta = JSON.parse(opmeta);
-    if (!OpMeta.isArray(opmeta)) throw new Error("invalid opmeta type");
-    else {
-        // in-depth validation for op meta
-        const _allAliases = [];
-        const _opmeta = opmeta as any;
-        for (let i = 0; i < _opmeta.length; i++) {
-            let hasOperandArg = false;
-            let hasInputOperandArg = false;
-            let hasInputOperandArgComp = false;
-            let hasOutputOperandArg = false;
-            let hasOutputOperandArgComp = false;
-
-            // cache all aliases for check across all ops
-            _allAliases.push(_opmeta[i].name);
-            if (_opmeta[i].aliases) _allAliases.push(..._opmeta[i].aliases);
-
-            // check for operand args validity
-            if (typeof _opmeta[i].operand !== "number") {
-                hasOperandArg = true;
-                let check = true;
-                for (let j = 0; j < _opmeta[i].operand.length; j++) {
-                    if (_opmeta[i].operand[j].name === "inputs") {
-                        if (hasInputOperandArg) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: double "inputs" named operand args`
-                        );
-                        hasInputOperandArg = true;
-                        if ("computation" in _opmeta[i].operand[j]) hasInputOperandArgComp = true;
-                    }
-                    if (_opmeta[i].operand[j].name === "outputs") {
-                        if (hasOutputOperandArg) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: double "outputs" named operand args`
-                        );
-                        hasOutputOperandArg = true;
-                        if ("computation" in _opmeta[i].operand[j]) hasOutputOperandArgComp = true;
-                    }
-
-                    // check computation validity
-                    if ("computation" in _opmeta[i].operand[j]) {
-                        let _comp = _opmeta[i].operand[j].computation;
-                        _comp = _comp.replace(/arg/g, "30");
-                        try { stringMath(_comp); }
-                        catch { throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: bad "computation" equation for ${_opmeta[i].operand[j].name}`
-                        );}
-                    }
-                    // bits range validity
-                    if (_opmeta[i].operand[j].bits[0] > _opmeta[i].operand[j].bits[1]) {
-                        throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: start bit greater than end bit for ${_opmeta[i].operand[j].name}`
-                        );
-                    }
-                    // check bits
-                    const _range1 = _expandBits(_opmeta[i].operand[j].bits);
-                    for (let k = j + 1; k < _opmeta[i].operand.length; k++) {
-                    // check order of operand args by bits index from low bits to high
-                        if (_opmeta[i].operand[j].bits[0] <= _opmeta[i].operand[k].bits[1]) {
-                            throw new Error(
-                                `invalid meta for ${_opmeta[i].name}, reason: bad operand args order, should be from high to low`
-                            );
-                        }
-                        // check operand args bits overlap
-                        const _range2 = _expandBits(_opmeta[i].operand[k].bits);
-                        _range1.forEach(v => {
-                            if (_range2.includes(v)) check = false;
-                        });
-                        if (!check) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: operand args bits overlap`
-                        );
-                    }
-                }
-            }
-
-            // check for inputs bits and computation validity and validity against operand
-            if (typeof _opmeta[i].inputs !== "number") {
-            // check validity against operand
-                if (hasInputOperandArg) {
-                    if (!("bits" in _opmeta[i].inputs)) throw new Error(
-                        `invalid meta for ${_opmeta[i].name}, reason: must have specified "bits" field for inputs`
-                    );
-                    if (hasInputOperandArgComp) {
-                        if (!("computation" in _opmeta[i].inputs)) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: must have specified "computation" field for inputs`
-                        );
-                    }
-                    else {
-                        if ("computation" in _opmeta[i].inputs) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: unexpected "computation" field for inputs`
-                        );
-                    }
-                }
-                else {
-                    if ("bits" in _opmeta[i].inputs || "computation" in _opmeta[i].inputs) throw new Error(
-                        `invalid meta for ${_opmeta[i].name}, reason: unexpected "bits" or "computation" fields for inputs`
-                    );
-                }
-                // check bits range validity
-                if ("bits" in _opmeta[i].inputs) {
-                    if (_opmeta[i].inputs.bits[0] > _opmeta[i].inputs.bits[1]) throw new Error(
-                        `invalid meta for ${_opmeta[i].name}, reason: start bit greater than end bit for inputs`
-                    );
-                }
-                // check computation validity
-                if ("computation" in _opmeta[i].inputs) {
-                    let _comp = _opmeta[i].inputs.computation;
-                    _comp = _comp.replace(/bits/g, "30");
-                    try { stringMath(_comp); }
-                    catch { throw new Error(
-                        `invalid meta for ${_opmeta[i].name}, reason: bad "computation" equation for inputs`
-                    );}
-                }
-            }
-            else {
-                if (hasInputOperandArg) throw new Error(
-                    `invalid meta for ${_opmeta[i].name}, reason: unexpected input type, must be derived from bits`
-                );
-            }
-
-            // check for outputs bits and computation validity and validity against operand
-            if (typeof _opmeta[i].outputs !== "number") {
-            // check validity against operand
-                if (!hasOperandArg) throw new Error(
-                    `invalid meta for ${_opmeta[i].name}, reason: cannot have computed output`
-                );
-                if (hasOutputOperandArg) {
-                    if (hasOutputOperandArgComp) {
-                        if (!("computation" in _opmeta[i].outputs)) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: must have specified "computation" field for outputs`
-                        );
-                    }
-                    else {
-                        if ("computation" in _opmeta[i].outputs) throw new Error(
-                            `invalid meta for ${_opmeta[i].name}, reason: unexpected "computation" field for outputs`
-                        );
-                    }
-                }
-                // check bits range validity
-                if (_opmeta[i].outputs.bits[0] > _opmeta[i].outputs.bits[1]) throw new Error(
-                    `invalid meta for ${_opmeta[i].name}, reason: start bit greater than end bit for outputs`
-                );
-                // check computation validity
-                if ("computation" in _opmeta[i].outputs) {
-                    let _comp = _opmeta[i].outputs.computation;
-                    _comp = _comp.replace(/bits/g, "30");
-                    try { stringMath(_comp); }
-                    catch { throw new Error(
-                        `invalid meta for ${_opmeta[i].name}, reason: bad "computation" equation for outputs`
-                    );}
-                }
-            }
-            else {
-                if (hasOutputOperandArg) throw new Error(
-                    `invalid meta for ${_opmeta[i].name}, reason: unexpected output type, must be derived from bits`
-                );
-            }
-        }
-  
-        // check for overlap among all aliases
-        if (_allAliases.length) {
-            while (_allAliases.length) {
-                const _item = _allAliases.splice(0, 1)[0];
-                if (_allAliases.includes(_item)) throw new Error(
-                    `invalid meta, reason: duplicated names or aliases "${_item}"`
-                );
-            }
-        }
-        return true;
-    }
-};
-
-/**
- * @public
- * Validate a meta or array of metas against a schema
- *
- * @param meta - A meta object or array of meta objects or stringified format of them
- * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
- * @returns boolean
- */
-export const validateMetaBySchema = (
-    meta: object | object[] | string,
-    schema: object | string
-): boolean => {
-    const _expandBits = (bits: [number, number]) => {
-        const _len = bits[1] - bits[0] + 1;
-        const _result = [];
-        for (let i = 0; i < _len; i++) {
-            _result.push(bits[0] + i);
-        }
-        return _result;
-    };
-    let _meta;
-    let _schema;
-    if (typeof meta === "string") _meta = JSON.parse(meta);
-    else _meta = meta;
-    if (typeof schema === "string") _schema = JSON.parse(schema);
-    else _schema = schema;
-    const ajv = new Ajv();
-    const validate = ajv.compile(_schema);
-    if (!Array.isArray(_meta)) _meta = [_meta];
-
-    const _allAliases = [];
-    for (let i = 0; i < _meta.length; i++) {
-        
-        // validate by schema
-        if (!validate(_meta[i])) throw new Error(
-            `invalid meta for ${_meta[i].name}, reason: failed schema validation`
-        );
-  
-        // in-depth validation for op meta
-        if ("operand" in _meta[i] && "inputs" in _meta[i] && "outputs" in _meta[i]) {
-            let hasOperandArg = false;
-            let hasInputOperandArg = false;
-            let hasInputOperandArgComp = false;
-            let hasOutputOperandArg = false;
-            let hasOutputOperandArgComp = false;
-  
-            // cache all aliases for check across all ops
-            _allAliases.push(_meta[i].name);
-            if (_meta[i].aliases) _allAliases.push(..._meta[i].aliases);
-  
-            // check for operand args validity
-            if (typeof _meta[i].operand !== "number") {
-                hasOperandArg = true;
-                let check = true;
-                for (let j = 0; j < _meta[i].operand.length; j++) {
-                    if (_meta[i].operand[j].name === "inputs") {
-                        if (hasInputOperandArg) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: double "inputs" named operand args`
-                        );
-                        hasInputOperandArg = true;
-                        if ("computation" in _meta[i].operand[j]) hasInputOperandArgComp = true;
-                    }
-                    if (_meta[i].operand[j].name === "outputs") {
-                        if (hasOutputOperandArg) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: double "outputs" named operand args`
-                        );
-                        hasOutputOperandArg = true;
-                        if ("computation" in _meta[i].operand[j]) hasOutputOperandArgComp = true;
-                    }
-  
-                    // check computation validity
-                    if ("computation" in _meta[i].operand[j]) {
-                        let _comp = _meta[i].operand[j].computation;
-                        _comp = _comp.replace(/arg/g, "30");
-                        try { stringMath(_comp); }
-                        catch { throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: bad "computation" equation for ${_meta[i].operand[j].name}`
-                        );}
-                    }
-                    // bits range validity
-                    if (_meta[i].operand[j].bits[0] > _meta[i].operand[j].bits[1]) throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: start bit greater than end bit for ${_meta[i].operand[j].name}`
-                    );
-                    // check bits
-                    const _range1 = _expandBits(_meta[i].operand[j].bits);
-                    for (let k = j + 1; k < _meta[i].operand.length; k++) {
-                        // check order of operand args by bits index from low bits to high
-                        if (_meta[i].operand[j].bits[0] <= _meta[i].operand[k].bits[1]) {
-                            throw new Error(
-                                `invalid meta for ${_meta[i].name}, reason: bad operand args order, should be from high to low`
-                            );
-                        }
-                        // check operand args bits overlap
-                        const _range2 = _expandBits(_meta[i].operand[k].bits);
-                        _range1.forEach(v => {
-                            if (_range2.includes(v)) check = false;
-                        });
-                        if (!check) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: operand args bits overlap`
-                        );
-                    }
-                }
-            }
-  
-            // check for inputs bits and computation validity and validity against operand
-            if (typeof _meta[i].inputs !== "number") {
-                // check validity against operand
-                if (hasInputOperandArg) {
-                    if (!("bits" in _meta[i].inputs)) throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: must have specified "bits" field for inputs`
-                    );
-                    if (hasInputOperandArgComp) {
-                        if (!("computation" in _meta[i].inputs)) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: must have specified "computation" field for inputs`
-                        );
-                    }
-                    else {
-                        if ("computation" in _meta[i].inputs) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: unexpected "computation" field for inputs`
-                        );
-                    }
-                }
-                else {
-                    if ("bits" in _meta[i].inputs || "computation" in _meta[i].inputs) throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: unexpected "bits" or "computation" fields for inputs`
-                    );
-                }
-                // check bits range validity
-                if ("bits" in _meta[i].inputs) {
-                    if (_meta[i].inputs.bits[0] > _meta[i].inputs.bits[1]) throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: start bit greater than end bit for inputs`
-                    );
-                }
-                // check computation validity
-                if ("computation" in _meta[i].inputs) {
-                    let _comp = _meta[i].inputs.computation;
-                    _comp = _comp.replace(/bits/g, "30");
-                    try { stringMath(_comp); }
-                    catch { throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: bad "computation" equation for inputs`
-                    );}
-                }
-            }
-            else {
-                if (hasInputOperandArg) throw new Error(
-                    `invalid meta for ${_meta[i].name}, reason: unexpected input type, must be derived from bits`
-                );
-            }
-  
-            // check for outputs bits and computation validity and validity against operand
-            if (typeof _meta[i].outputs !== "number") {
-                // check validity against operand
-                if (!hasOperandArg) throw new Error(
-                    `invalid meta for ${_meta[i].name}, reason: cannot have computed output`
-                );
-                if (hasOutputOperandArg) {
-                    if (hasOutputOperandArgComp) {
-                        if (!("computation" in _meta[i].outputs)) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: must have specified "computation" field for outputs`
-                        );
-                    }
-                    else {
-                        if ("computation" in _meta[i].outputs) throw new Error(
-                            `invalid meta for ${_meta[i].name}, reason: unexpected "computation" field for outputs`
-                        );
-                    }
-                }
-                // check bits range validity
-                if (_meta[i].outputs.bits[0] > _meta[i].outputs.bits[1]) throw new Error(
-                    `invalid meta for ${_meta[i].name}, reason: start bit greater than end bit for outputs`
-                );
-                // check computation validity
-                if ("computation" in _meta[i].outputs) {
-                    let _comp = _meta[i].outputs.computation;
-                    _comp = _comp.replace(/bits/g, "30");
-                    try { stringMath(_comp); }
-                    catch { throw new Error(
-                        `invalid meta for ${_meta[i].name}, reason: bad "computation" equation for outputs`
-                    );}
-                }
-            }
-            else {
-                if (hasOutputOperandArg) throw new Error(
-                    `invalid meta for ${_meta[i].name}, reason: unexpected output type, must be derived from bits`
-                );
-            }
-        }
-    }
-  
-    // check for overlap among all aliases
-    if (_allAliases.length) {
-        while (_allAliases.length) {
-            const _item = _allAliases.splice(0, 1)[0];
-            if (_allAliases.includes(_item)) throw new Error(
-                `invalid meta, reason: duplicated names or aliases "${_item}"`
-            );
-        }
-    }
-    return true;
-};
-
-/**
- * @public
- * Method to compress and generate deployable bytes for op meta
- *
- * @param meta - Array of OpMeta items
- * @returns Bytes as HexString
- */
-export function bytesFromMeta(opMeta: OpMeta[]): string
-
-/**
- * @public
- * Method to compress and generate deployable bytes for contract meta
- *
- * @param meta - ContractMeta item
- * @returns Bytes as HexString
- */
-export function bytesFromMeta(contractMeta: ContractMeta): string
-
-/**
- * @public
- * Method to compress and generate deployable bytes for any meta as string
- *
- * @param meta - The raw string content of the meta
- * @returns Bytes as HexString
- */
-export function bytesFromMeta(meta: string): string
-
-export function bytesFromMeta(
-    meta: OpMeta[] | ContractMeta | string
-): string {
-    let _meta;
-    if (typeof meta === "string") _meta = meta;
-    else if (OpMeta.isArray(meta) || ContractMeta.is(meta)) _meta = format(
-        JSON.stringify(meta, null, 4), 
-        { parser: "json",  plugins: [babelParser] }
-    );
-    else throw new Error("invalid type for meta");
-    return hexlify(deflate(_meta), { allowMissingPrefix: true });
-}
-
-/**
- * @public
- * Decompress and convert bytes to meta as string
- *
- * @param bytes - Bytes to decompress and convert to json string
- * @returns meta content as string
- */
-export const metaFromBytes = (bytes: BytesLike): string => {
-    return Buffer.from(
-        inflate(
-            arrayify(bytes, { allowMissingPrefix: true })
-        )
-    ).toString();
-};
-
-/**
- * @public Method to get array of OpMetas from a meta string content 
- * @param meta - The meta to convert to OpMeta if it has valid content
- * @returns array of OpMeta objects
- */
-export const toOpMeta = (meta: string): OpMeta[] => {
-    let parsed = JSON.parse(meta);
-    if (!Array.isArray(parsed)) parsed = [parsed];
-    if (validateOpMeta(parsed)) return parsed;
-    else throw new Error("invalid op meta content");
-};
-
-/**
- * @public Method to get ContractMeta from a meta string content 
- * @param meta - The meta to convert to ContractMeta if it has valid content
- * @returns ContractMeta object
- */
-export const toContractMeta = (meta: string): ContractMeta => {
-    const parsed = JSON.parse(meta);
-    if (ContractMeta.is(parsed)) return parsed;
-    else throw new Error("invalid contract meta content");
-};
-
-/**
 * @public
 * Use CBOR to decode from a given value.
 *
@@ -825,7 +257,9 @@ export const toContractMeta = (meta: string): ContractMeta => {
 * @returns An array with the decoded data.
 */
 export const cborDecode = (dataEncoded_: string): Array<any> => {
-    return decodeAllSync(dataEncoded_);
+    return decodeAllSync(
+        arrayify(dataEncoded_, { allowMissingPrefix: true })
+    );
 };
 
 /**
@@ -868,7 +302,7 @@ export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
  *
  * @returns The data encoded with CBOR as an hex string.
  */
-export const cborEncode = (
+export const cborEncode = async(
     payload_: string | number | Uint8Array | ArrayBuffer,
     magicNumber_: MAGIC_NUMBERS,
     contentType_: string,
@@ -876,7 +310,7 @@ export const cborEncode = (
       contentEncoding?: string;
       contentLanguage?: string;
     }
-): string => {
+): Promise<string> => {
     const m = new Map();
     m.set(0, payload_); // Payload
     m.set(1, magicNumber_); // Magic number
@@ -891,83 +325,25 @@ export const cborEncode = (
             m.set(4, options_.contentLanguage); // Content-Language
         }
     }
-    return encodeCanonical(m).toString("hex").toLowerCase();
+    return (await encodeAsync(m, { canonical: true })).toString("hex").toLowerCase();
 };
 
 /**
- * @public Calculates the hash for a given meta
- * @param metaBytes - The meta bytes to get the hash from
- * @param magicNumbers - The magic number associated with the metaBytes
- * @returns The meta hash
+ * @public CBOR encode given a map object
+ * @param map - The cbor map
+ * @returns The data encoded with CBOR as an hex string.
  */
-export function getMetaHash(metaBytes: BytesLike[], magicNumbers: MAGIC_NUMBERS[]): string {
-    let body = "";
-    if (metaBytes.length !== magicNumbers.length) throw new Error(
-        "metaBytes and magicNumbers length don't match"
+export const cborEncodeMap = async(map: Map<number, any>): Promise<string> => {
+    return (await encodeAsync(map, { canonical: true })).toString("hex").toLowerCase();
+};
+
+
+/**
+ * @public Converts a string to uint8array
+ * @param text - the text to convert
+ */
+export const stringToUint8Array = (text: string): Uint8Array => {
+    return Uint8Array.from(
+        Array.from(text).map(char => char.charCodeAt(0))
     );
-    else {
-        for (let i = 0; i < metaBytes.length; i++) {
-            body = body + cborEncode(
-                arrayify(metaBytes[i]).buffer, 
-                magicNumbers[i], 
-                "application/json", 
-                { contentEncoding: "deflate" }
-            );
-        }
-    }
-    return keccak256(
-        "0x" + 
-        MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16) +
-        body
-    );
-}
-
-/**
- * @public
- * Checks if the meta hash matches the meta bytes by regenrating the hash
- * 
- * @param metaHash - The meta hash
- * @param metaBytes - The meta bytes
- */
-export function checkMetaHash(
-    metaHash: string,
-    metaBytes: BytesLike, 
-): boolean
-
-/**
- * @public
- * Checks if meta hash matches the array of meta sequence by regenrating the hash
- * 
- * @param metaHash - The meta hash
- * @param metaBytes - Array of meta bytes
- * @param magicNumbers - Array of magic numbers associated with meta bytes
- */
-export function checkMetaHash(
-    metaHash: string,
-    metaBytes: BytesLike[], 
-    magicNumbers: MAGIC_NUMBERS[]
-): boolean
-
-export function checkMetaHash(
-    metaHash: string,
-    metaBytes: BytesLike[] | BytesLike,
-    magicNumbers?: MAGIC_NUMBERS[]
-): boolean {
-    if (isBytesLike(metaBytes)) return keccak256(metaBytes) === metaHash;
-    else return getMetaHash(metaBytes, magicNumbers!) === metaHash;
-}
-
-/**
- * @public Check if a value is of MAGIC_NUMBERS
- * @param value - The value to check
- */
-export function isMagicNumber(value: any): value is MAGIC_NUMBERS {
-    return typeof value === "bigint"
-        && (
-            MAGIC_NUMBERS.CONTRACT_META_V1      === value
-            || MAGIC_NUMBERS.DOTRAIN            === value
-            || MAGIC_NUMBERS.OPS_META_V1        === value
-            || MAGIC_NUMBERS.RAIN_META_DOCUMENT === value
-            || MAGIC_NUMBERS.SOLIDITY_ABIV2     === value
-        );
-}
+};
