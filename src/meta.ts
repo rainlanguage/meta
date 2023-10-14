@@ -64,7 +64,7 @@ export namespace Meta {
     /**
      * @public The query search result from subgraph for NP constructor meta
      */
-    export type NPConstructorMeta = {
+    export type NPConstructor = {
         /**
          * NP constructor meta hash
          */
@@ -193,14 +193,14 @@ export namespace Meta {
      * @param timeout - Seconds to wait for query results to settle, if no settlement is found before timeout the promise will be rejected
      * @returns A promise that resolves with ABI meta bytes as hex string and rejects if nothing found
      */
-    export async function searchDeployerMeta(
+    export async function searchDeployer(
         hash: string,
         subgraphUrls: string[],
         timeout = 5000
-    ): Promise<NPConstructorMeta> {
+    ): Promise<NPConstructor> {
         if (!hash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error("invalid bytecode hash");
         const _query = `{ expressionDeployers(where: {meta_: {id: "${ hash.toLowerCase() }"}} first: 1) { constructorMetaHash constructorMeta }}`;
-        const _request = async(url: string): Promise<NPConstructorMeta> => {
+        const _request = async(url: string): Promise<NPConstructor> => {
             try {
                 const _res = await new GraphQLClient(
                     url, { headers: { "Content-Type":"application/json" }, timeout }
@@ -532,44 +532,36 @@ export namespace Meta {
             }
             else {
                 if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
-                    if (!this.cache[hashOrStore.toLowerCase()]) {
+                    const hash = hashOrStore.toLowerCase();
+                    if (!this.cache[hash]) {
                         if (metaBytes) {
                             if (!metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                             try {
-                                if (
-                                    keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
-                                ) {
-                                    this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
+                                if (keccak256(metaBytes).toLowerCase() === hash) {
+                                    this.cache[hash] = metaBytes.toLowerCase();
                                     await this.storeContent(metaBytes);
                                 }
                                 else {
-                                    if (!this.cache[hashOrStore.toLowerCase()]) {
-                                        this.cache[hashOrStore.toLowerCase()] = null;
-                                    }
+                                    if (!this.cache[hash]) this.cache[hash] = null;
                                 }
                             }
                             catch {
-                                if (!this.cache[hashOrStore.toLowerCase()]) {
-                                    this.cache[hashOrStore.toLowerCase()] = null;
-                                }
+                                if (!this.cache[hash]) this.cache[hash] = null;
                             }
                         }
                         else {
                             try {
                                 const _metaBytes = await search(hashOrStore, this.subgraphs);
-                                this.cache[hashOrStore.toLowerCase()] = _metaBytes;
+                                this.cache[hash] = _metaBytes;
                                 await this.storeContent(_metaBytes);
                             }
                             catch {
-                                if (!this.cache[hashOrStore.toLowerCase()]) {
-                                    this.cache[hashOrStore.toLowerCase()] = null;
-                                }
+                                if (!this.cache[hash]) this.cache[hash] = null;
                                 // console.log(`cannot find any settlement for hash: ${hashOrStore}`);
                             }
                         }
                     }
                 }
-                // else console.log(`invalid hash: ${hashOrStore}`);
             }
         }
 
@@ -592,9 +584,7 @@ export namespace Meta {
                         await this.storeContent(_metaBytes);
                     }
                     catch {
-                        if (!this.cache[hash.toLowerCase()]) {
-                            this.cache[hash.toLowerCase()] = null;
-                        }
+                        if (!this.cache[hash.toLowerCase()]) this.cache[hash.toLowerCase()] = null;
                     }
                 }
             }
@@ -665,7 +655,7 @@ export namespace Meta {
             if (!isDeployerHash) return this.amCache[hash.toLowerCase()];
             else {
                 try {
-                    const _deployerMeta = await searchDeployerMeta(hash, this.subgraphs);
+                    const _deployerMeta = await searchDeployer(hash, this.subgraphs);
                     this.update(_deployerMeta.hash, _deployerMeta.rawBytes);
                     const amMap = decode(_deployerMeta.rawBytes).find(
                         v => v.get(1) === MAGIC_NUMBERS.AUTHORING_META_V1
