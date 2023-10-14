@@ -6,7 +6,16 @@ import { GraphQLClient } from "graphql-request";
 import { ContractMeta } from "./types/contract";
 import { RAIN_SUBGRAPHS } from "./rainSubgraphs";
 import { AuthoringMeta } from "./types/authoring";
-import { arrayify, cborDecode, cborEncode, cborEncodeMap, hexlify, isBytesLike, keccak256, stringToUint8Array } from "./utils";
+import { 
+    hexlify, 
+    arrayify, 
+    keccak256, 
+    cborDecode, 
+    cborEncode, 
+    isBytesLike, 
+    cborEncodeMap, 
+    stringToUint8Array 
+} from "./utils";
 
 
 /**
@@ -17,49 +26,57 @@ export namespace Meta {
      * @public Provides ABI meta functionalities
      */
     export import Abi = AbiMeta;
+
     /**
      * @public Provides Contract meta functionalities
      */
     export import Contract = ContractMeta;
+
     /**
      * @public Provides Authoring meta functionalities
      */
     export import Authoring = AuthoringMeta;
+
     /**
      * @public Provides every functionality for Magic Numbers
      */
     export import MagicNumbers = MAGIC_NUMBERS;
+
     /**
      * @public Provides every functionality for Rain subgraphs
      */
-    export const KnownSubgraphs = RAIN_SUBGRAPHS;
+    export const Subgraphs = RAIN_SUBGRAPHS;
+    export type Subgraphs = Exclude<
+        (typeof Subgraphs)[keyof typeof Subgraphs],
+        (...args: any[]) => any
+    >[number]
 
     /**
      * @public known content types of rain metas
      */
-    export const KnownContentTypes = [
+    export const ContentTypes = [
         "application/json", 
         "application/cbor", 
         "application/octet-stream", 
         "text/plain"
     ] as const;
-    export type KnownContentTypes = typeof KnownContentTypes[number];
+    export type ContentTypes = typeof ContentTypes[number];
 
     /**
      * @public known content encoding of rain metas
      */
-    export const KnownContentEncodings = [
+    export const ContentEncodings = [
         "deflate"
     ] as const;
-    export type KnownContentEncodings = typeof KnownContentEncodings[number];
+    export type ContentEncodings = typeof ContentEncodings[number];
 
     /**
      * @public known content language of rain metas
      */
-    export const KnownContentLanguages = [
+    export const ContentLanguages = [
         "en"
     ] as const;
-    export type KnownContentLanguages = typeof KnownContentLanguages[number];
+    export type ContentLanguages = typeof ContentLanguages[number];
 
     /**
      * @public The query search result from subgraph for NP constructor meta
@@ -122,9 +139,9 @@ export namespace Meta {
         if (validate) {
             if (!payload) throw new Error("undefined payload");
             if (!MAGIC_NUMBERS.is(magicNumber)) throw new Error("unknown magic number");
-            if (!contentType || !KnownContentTypes.includes(contentType)) throw new Error("unknown content type");
-            if (contentEncoding !== undefined && !KnownContentEncodings.includes(contentEncoding)) throw new Error("unknown content encoding");
-            if (contentLanguage !== undefined && !KnownContentLanguages.includes(contentLanguage)) throw new Error("unknown content language");
+            if (!contentType || !ContentTypes.includes(contentType)) throw new Error("unknown content type");
+            if (contentEncoding !== undefined && !ContentEncodings.includes(contentEncoding)) throw new Error("unknown content encoding");
+            if (contentLanguage !== undefined && !ContentLanguages.includes(contentLanguage)) throw new Error("unknown content language");
         }
 
         const config: any = { raw: false };
@@ -236,8 +253,6 @@ export namespace Meta {
         cborMaps: Map<any, any>[], 
         asRainDocument: boolean
     ): Promise<string>
-
-
     /**
      * @public Calculates the hash for a given meta as array of objects
      * @param items - array of cbor map items as objects
@@ -248,20 +263,19 @@ export namespace Meta {
         items: {
             payload: BytesLike,
             magicNumber: MAGIC_NUMBERS,
-            contentType: KnownContentTypes,
-            contentEncoding?: KnownContentEncodings,
-            contentLanguage?: KnownContentLanguages
+            contentType: ContentTypes,
+            contentEncoding?: ContentEncodings,
+            contentLanguage?: ContentLanguages
         }[],
         asRainDocument: boolean
     ): Promise<string>
-
     export async function hash(
         items: {
             payload: BytesLike,
             magicNumber: MAGIC_NUMBERS,
-            contentType: KnownContentTypes,
-            contentEncoding?: KnownContentEncodings,
-            contentLanguage?: KnownContentLanguages
+            contentType: ContentTypes,
+            contentEncoding?: ContentEncodings,
+            contentLanguage?: ContentLanguages
         }[] | Map<any, any>[],
         asRainDocument: boolean
     ): Promise<string> {
@@ -278,8 +292,6 @@ export namespace Meta {
         cborMaps: Map<any, any>[], 
         asRainDocument: boolean
     ): Promise<string>
-
-
     /**
      * @public Method to cbor encode array of meta items as objects
      * @param items - array of cbor map items as objects
@@ -290,20 +302,19 @@ export namespace Meta {
         items: {
             payload: BytesLike,
             magicNumber: MAGIC_NUMBERS,
-            contentType: KnownContentTypes,
-            contentEncoding?: KnownContentEncodings,
-            contentLanguage?: KnownContentLanguages
+            contentType: ContentTypes,
+            contentEncoding?: ContentEncodings,
+            contentLanguage?: ContentLanguages
         }[],
         asRainDocument: boolean
     ): Promise<string>
-
     export async function encode(
         items: {
             payload: BytesLike,
             magicNumber: MAGIC_NUMBERS,
-            contentType: KnownContentTypes,
-            contentEncoding?: KnownContentEncodings,
-            contentLanguage?: KnownContentLanguages
+            contentType: ContentTypes,
+            contentEncoding?: ContentEncodings,
+            contentLanguage?: ContentLanguages
         }[] | Map<any, any>[],
         asRainDocument: boolean
     ): Promise<string> {
@@ -359,14 +370,14 @@ export namespace Meta {
                 const contentLanguage = value?.get(4);
                 if (payload === undefined) return false;
                 if (magicNumber === undefined || !MAGIC_NUMBERS.is(magicNumber)) return false;
-                if (!contentType || !KnownContentTypes.includes(contentType)) return false;
+                if (!contentType || !ContentTypes.includes(contentType)) return false;
                 if (
                     contentEncoding !== undefined && 
-                    !KnownContentEncodings.includes(contentEncoding)
+                    !ContentEncodings.includes(contentEncoding)
                 ) return false;
                 if (
                     contentLanguage !== undefined && 
-                    !KnownContentLanguages.includes(contentLanguage)
+                    !ContentLanguages.includes(contentLanguage)
                 ) return false;
             }
             catch {
@@ -391,7 +402,7 @@ export namespace Meta {
      * @example
      * ```typescript
      * // to instantiate with including default subgraphs
-     * const store = new Store();   // pass 'false' to not include default rain subgraph endpoint
+     * const store = new Store();   // pass 'false' to not include default rain subgraph endpoints
      * 
      * // or to instantiate with initial arguments
      * const store = await Store.create(options);
@@ -400,13 +411,13 @@ export namespace Meta {
      * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
      * 
      * // update the store with a new Store object (merges the stores)
-     * await store.updateStore(newMetaStore)
+     * await store.update(newMetaStore)
      * 
      * // updates the meta store with a new meta
-     * await store.updateStore(metaHash, metaBytes)
+     * await store.update(metaHash, metaBytes)
      * 
      * // updates the meta store with a new meta by searching through subgraphs
-     * await store.updateStore(metaHash)
+     * await store.update(metaHash)
      * 
      * // to get a record from store
      * const meta = store.getMeta(metaHash);
@@ -643,16 +654,16 @@ export namespace Meta {
         }
 
         /**
-         * @public Get authoring meta for a given meta hash
+         * @public Get authoring meta for a given hash
          * @param hash - The hash
-         * @param isDeployerHash - Determines if the hash is an authoringMeta or deployer bytecode meta hash
-         * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
+         * @param type - Determines if the hash is an authoringMeta or deployer bytecode meta hash
+         * @returns AuthoringMeta bytes or undefined if no matching record was found
          */
         public async getAuthoringMeta(
             hash: string,
-            isDeployerHash = false
+            type: "deployer-bytecode-hash" | "authoring-meta-hash"
         ): Promise<string | undefined> {
-            if (!isDeployerHash) return this.amCache[hash.toLowerCase()];
+            if (type === "authoring-meta-hash") return this.amCache[hash.toLowerCase()];
             else {
                 try {
                     const _deployerMeta = await searchDeployer(hash, this.subgraphs);
@@ -724,7 +735,7 @@ export namespace Meta {
          * @param keepMeta - If the meta should be kept or not
          */
         public deleteDotrain(uri: string, keepMeta = false) {
-            if (this.dotrainCache[uri]) {
+            if (this.dotrainCache[uri] !== undefined) {
                 if (!keepMeta) delete this.cache[this.dotrainCache[uri]];
                 delete this.dotrainCache[uri];
             }
@@ -735,12 +746,14 @@ export namespace Meta {
          * it does not do any checks on the given values
          * @param properties - The properties to merge
          */
-        public merge(properties: {
-            subgraphs?: string[];
-            cache?: { [hash: string]: string | null }; 
-            amCache?: { [hash: string]: string };  
-            dotrainCache?: { [hash: string]: string };
-        }) {
+        public merge(
+            properties: {
+                subgraphs?: string[];
+                cache?: { [hash: string]: string | null }; 
+                amCache?: { [hash: string]: string };  
+                dotrainCache?: { [hash: string]: string };
+            }
+        ) {
             if (properties.subgraphs) properties.subgraphs.forEach(sg => {
                 if (typeof sg === "string" && sg) {
                     if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
@@ -759,10 +772,9 @@ export namespace Meta {
                 }
             }
             if (properties.dotrainCache) for (const hash in properties.dotrainCache) {
-                if (!this.dotrainCache[hash.toLowerCase()]) {
-                    this.dotrainCache[
-                        hash.toLowerCase()
-                    ] = properties.dotrainCache[hash].toLowerCase();
+                const _h = hash.toLowerCase();
+                if (!this.dotrainCache[_h]) {
+                    this.dotrainCache[_h] = properties.dotrainCache[hash].toLowerCase();
                 }
             }
         }
