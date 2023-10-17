@@ -713,11 +713,11 @@ export namespace Meta {
                     }
                     this.dotrainCache[uri] = _dotrainMetaHash;
                     this.cache[_dotrainMetaHash] = _dotrainMeta;
-                    return { newHash: _dotrainMeta, oldHash: _oldHash };
+                    return { newHash: _dotrainMetaHash, oldHash: _oldHash };
                 }
                 else {
                     if (!this.cache[_dotrainMetaHash]) this.cache[_dotrainMetaHash] = _dotrainMeta;
-                    return { newHash: _dotrainMetaHash, oldHash: _dotrainMetaHash };
+                    return { newHash: _dotrainMetaHash };
                 }
             }
             else {
