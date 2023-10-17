@@ -694,7 +694,11 @@ export namespace Meta {
          * @param uri - The dotrain file URI (path)
          * @param keepOld - In case of update, if the previous dotrain meta with same URI must be kept in the store or not, default is false
          */
-        public async storeDotrain(text: string, uri: string, keepOld = false) {
+        public async storeDotrain(
+            text: string,
+            uri: string, 
+            keepOld = false
+        ): Promise<{ newHash: string; oldHash?: string }> {
             const _dotrainMeta = (await encode([{
                 payload: stringToUint8Array(text),
                 magicNumber: MagicNumbers.DOTRAIN_V1,
@@ -709,14 +713,17 @@ export namespace Meta {
                     }
                     this.dotrainCache[uri] = _dotrainMetaHash;
                     this.cache[_dotrainMetaHash] = _dotrainMeta;
+                    return { newHash: _dotrainMeta, oldHash: _oldHash };
                 }
                 else {
                     if (!this.cache[_dotrainMetaHash]) this.cache[_dotrainMetaHash] = _dotrainMeta;
+                    return { newHash: _dotrainMetaHash, oldHash: _dotrainMetaHash };
                 }
             }
             else {
                 this.dotrainCache[uri] = _dotrainMetaHash;
                 this.cache[_dotrainMetaHash] = _dotrainMeta;
+                return { newHash: _dotrainMetaHash };
             }
         }
 
