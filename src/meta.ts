@@ -333,7 +333,7 @@ export namespace Meta {
             for (let i = 0; i < _items.length; i++) {
                 if (_items[i].magicNumber === MAGIC_NUMBERS.RAIN_META_DOCUMENT) throw new Error("cannot nest RainDocument meta");
                 body = body + (await cborEncode(
-                    arrayify(_items[i].payload, {  allowMissingPrefix: true }), 
+                    arrayify(_items[i].payload, {  allowMissingPrefix: true }).buffer, 
                     _items[i].magicNumber, 
                     _items[i].contentType, 
                     { 
