@@ -690,17 +690,17 @@ export namespace Meta {
          * and map it to the provided path it should be noted that reading the content of the dotrain is not in 
          * the scope of Store and handling and passing on a correct URI (path) for the text must be handled 
          * externally by the implementer
-         * @param text - The dotrain text
+         * @param text - The dotrain text as string or Uint8Array
          * @param uri - The dotrain file URI (path)
          * @param keepOld - In case of update, if the previous dotrain meta with same URI must be kept in the store or not, default is false
          */
         public async storeDotrain(
-            text: string,
+            text: string | Uint8Array,
             uri: string, 
             keepOld = false
         ): Promise<{ newHash: string; oldHash?: string }> {
             const _dotrainMeta = (await encode([{
-                payload: stringToUint8Array(text),
+                payload: typeof text === "string" ? stringToUint8Array(text) : text,
                 magicNumber: MagicNumbers.DOTRAIN_V1,
                 contentType: "application/octet-stream"
             }], false)).toLowerCase();
