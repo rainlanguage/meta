@@ -722,7 +722,7 @@ export namespace Meta {
             }
             else {
                 this.dotrainCache[uri] = _dotrainMetaHash;
-                this.cache[_dotrainMetaHash] = _dotrainMeta;
+                if (!this.cache[_dotrainMetaHash]) this.cache[_dotrainMetaHash] = _dotrainMeta;
                 return { newHash: _dotrainMetaHash };
             }
         }
