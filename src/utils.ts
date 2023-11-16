@@ -339,6 +339,7 @@ export const cborEncodeMap = async(map: Map<number, any>): Promise<string> => {
 
 
 /**
+ * @deprecated
  * @public Converts a string to uint8array
  * @param text - the text to convert
  */
