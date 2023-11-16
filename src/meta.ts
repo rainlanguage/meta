@@ -13,7 +13,8 @@ import {
     cborDecode, 
     cborEncode, 
     isBytesLike, 
-    cborEncodeMap 
+    cborEncodeMap, 
+    stringToUint8Array 
 } from "./utils";
 
 
@@ -698,9 +699,9 @@ export namespace Meta {
             uri: string, 
             keepOld = false
         ): Promise<{ newHash: string; oldHash?: string }> {
-
+            
             const _dotrainMeta = (await encode([{
-                payload: typeof text === "string" ? (new TextEncoder).encode(text) : text,
+                payload: typeof text === "string" ? stringToUint8Array(text) : text,
                 magicNumber: MagicNumbers.DOTRAIN_V1,
                 contentType: "application/octet-stream"
             }], false)).toLowerCase();

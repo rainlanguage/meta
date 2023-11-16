@@ -339,12 +339,10 @@ export const cborEncodeMap = async(map: Map<number, any>): Promise<string> => {
 
 
 /**
- * @deprecated
- * @public Converts a string to uint8array
+ * @public Converts a string to uint8array using TextEncoder
  * @param text - the text to convert
  */
 export const stringToUint8Array = (text: string): Uint8Array => {
-    return Uint8Array.from(
-        Array.from(text).map(char => char.charCodeAt(0))
-    );
+    const encoder = new TextEncoder();
+    return encoder.encode(text);
 };
